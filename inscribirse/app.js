@@ -26,8 +26,18 @@
   const mercCheckbox = $("mercRulesAgree");
   const mercContinue = $("mercRulesContinue");
 
-  const CORRECT_ORIGIN = "http://localhost:5173";
-  const CORRECT_URL = CORRECT_ORIGIN + "/inscribirse/";
+  const DEFAULT_ORIGIN = "http://localhost:5173";
+
+  function getOriginForLinks() {
+    try {
+      if (typeof window !== "undefined" && window.location && window.location.origin) return window.location.origin;
+    } catch {}
+    return DEFAULT_ORIGIN;
+  }
+
+  function getCorrectUrl() {
+    return getOriginForLinks() + "/inscribirse/";
+  }
 
   function hasMercAccepted() {
     try {
@@ -92,7 +102,9 @@
 
   function isCorrectServer() {
     if (typeof window === "undefined" || window.location.protocol === "file:") return false;
-    return window.location.origin === CORRECT_ORIGIN;
+    // En Vercel u otras integraciones, el origen cambia. Dejamos que el fetch a /api/data
+    // sea el que determine si el servidor realmente responde.
+    return true;
   }
 
   let tournaments = [];
@@ -205,14 +217,15 @@
 
   async function load() {
     if (window.location.protocol === "file:") {
-      loading.innerHTML = "Abrí esta página desde el servidor: <a href=\"" + CORRECT_URL + "\" style=\"color:#ffb03a\">" + CORRECT_URL + "</a> (ejecutá <code>npm run dev</code> antes).";
+      const correctUrl = getCorrectUrl();
+      loading.innerHTML = "Abrí esta página desde el servidor: <a href=\"" + correctUrl + "\" style=\"color:#ffb03a\">" + correctUrl + "</a> (ejecutá <code>npm run dev</code> antes).";
       loading.classList.remove("hidden");
       return;
     }
     if (!isCorrectServer()) {
       wrongServerBanner.classList.remove("hidden");
       loading.classList.add("hidden");
-      document.getElementById("openCorrectUrl").href = CORRECT_URL;
+      document.getElementById("openCorrectUrl").href = getCorrectUrl();
       return;
     }
     try {
@@ -227,7 +240,8 @@
       tournaments = (data && data.tournaments) ? data.tournaments : [];
     } catch {
       tournaments = [];
-      loading.innerHTML = "No se pudo conectar. ¿Está corriendo el servidor? Ejecutá en la terminal: <code>npm run dev</code> y recargá. Luego entrá a <a href=\"" + CORRECT_URL + "\" style=\"color:#ffb03a\">" + CORRECT_URL + "</a>.";
+      const correctUrl = getCorrectUrl();
+      loading.innerHTML = "No se pudo conectar. ¿Está corriendo el servidor? Ejecutá en la terminal: <code>npm run dev</code> y recargá. Luego entrá a <a href=\"" + correctUrl + "\" style=\"color:#ffb03a\">" + correctUrl + "</a>.";
       loading.classList.remove("hidden");
       return;
     }
@@ -285,11 +299,11 @@
         submitError.classList.remove("hidden");
         if (res.status === 404) {
           submitErrorText.textContent = "La API no está en este servidor. Hacé clic en el botón de abajo para abrir la página en el servidor correcto (primero ejecutá npm run dev en la terminal).";
-          document.getElementById("submitErrorLink").href = CORRECT_URL;
+          document.getElementById("submitErrorLink").href = getCorrectUrl();
           document.getElementById("submitErrorLink").textContent = "Abrir en localhost:5173";
         } else {
           submitErrorText.textContent = json.error || "Error " + res.status + ". Revisá que el servidor esté corriendo (npm run dev).";
-          document.getElementById("submitErrorLink").href = CORRECT_URL;
+          document.getElementById("submitErrorLink").href = getCorrectUrl();
           document.getElementById("submitErrorLink").textContent = "Abrir en el servidor correcto";
         }
         submitError.scrollIntoView({ behavior: "smooth", block: "start" });
