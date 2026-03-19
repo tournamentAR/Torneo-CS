@@ -152,11 +152,10 @@ app.use((req, res) => {
     if (wanted === "index.html") {
       targets.push("index.html");
     } else {
-      // Si venía con '/', por ejemplo: "admin/" => "admin/index.html"
-      if (wanted.endsWith("/")) targets.push(`${wanted}index.html`);
-      // Si venía sin '/', probamos archivo directo y luego index de carpeta
-      targets.push(wanted);
-      targets.push(`${wanted}/index.html`);
+      // Quitamos trailing slashes para evitar dobles barras (admin//index.html).
+      const cleaned = wanted.replace(/\/+$/, "");
+      targets.push(cleaned);
+      targets.push(`${cleaned}/index.html`);
     }
 
     // En Vercel, __dirname puede no contener los archivos del proyecto.
@@ -184,14 +183,23 @@ app.use((req, res) => {
     // y hacer que `/` cargue el index equivocado.
     const bases = [
       __dirname,
+      path.join(__dirname, ".."),
       cwdBase,
+      path.join(cwdBase, ".."),
       path.join(__dirname, "public"),
       path.join(cwdBase, "public"),
       path.join(__dirname, "..", "public"),
     ];
 
     // Seguridad anti traversal: el candidato debe estar dentro de una de las bases esperadas.
-    const safeBases = [cwdBase, __dirname, path.join(__dirname, ".."), path.join(cwdBase, "public"), path.join(__dirname, "public")];
+    const safeBases = [
+      cwdBase,
+      path.join(cwdBase, ".."),
+      __dirname,
+      path.join(__dirname, ".."),
+      path.join(cwdBase, "public"),
+      path.join(__dirname, "public"),
+    ];
 
     for (const t of targets) {
       const candidates = bases.map((b) => path.join(b, t));
