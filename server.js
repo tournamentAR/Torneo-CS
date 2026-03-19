@@ -152,6 +152,24 @@ app.use((req, res) => {
     // En Vercel, __dirname puede no contener los archivos del proyecto.
     // Usamos process.cwd() como "base" real del runtime.
     const cwdBase = process.cwd();
+    // En `/` queremos sí o sí el menú principal (root `index.html`),
+    // incluso si `cwd` apunta a `public/`.
+    if (reqPath === "/" || reqPath === "") {
+      const rootHtmlCandidates = [
+        path.join(__dirname, "index.html"),
+        path.join(cwdBase, "index.html"),
+      ];
+      for (const filePath of rootHtmlCandidates) {
+        if (filePath.startsWith(__dirname) || filePath.startsWith(cwdBase)) {
+          if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+            res.sendFile(filePath);
+            return;
+          }
+        }
+      }
+      res.status(404).send("Cannot GET /");
+      return;
+    }
     // Priorizamos la raíz del proyecto. En Vercel `cwd` puede apuntar a `public/`
     // y hacer que `/` cargue el index equivocado.
     const candidates = [
