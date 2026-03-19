@@ -601,6 +601,17 @@
             <p class="card__desc">Anotate con tu equipo y jugadores; el organizador confirma para la llave.</p>
           </div>
         </a>
+        <a href="./sala/" class="card card--public hidden" id="ctaMiSala">
+          <span class="card__spotlight" aria-hidden="true"></span>
+          <div class="card__content">
+            <span class="card__label">Equipo</span>
+            <div class="card__title-wrap">
+              <span class="card__icon" aria-hidden="true"><svg viewBox="0 0 24 24" stroke-width="1.75"><path d="M3 12h18"/><path d="M12 3v18"/><circle cx="12" cy="12" r="9"/></svg></span>
+              <h2 class="card__title">Mi sala</h2>
+            </div>
+            <p class="card__desc">Volvé a tu sala de espera y conectate al servidor del match.</p>
+          </div>
+        </a>
       </nav>
 
       <p class="foot">
@@ -620,9 +631,26 @@
 
       window.addEventListener("DOMContentLoaded", function () {
         (function () {
+          var LAST_ROOM_KEY = "cs_last_waiting_room_v1";
           var STORAGE_KEY = "mercRulesAccepted_v1";
           var cta = document.getElementById("ctaInscribirse");
+          var ctaMiSala = document.getElementById("ctaMiSala");
           if (!cta) return;
+
+          try {
+            if (ctaMiSala) {
+              var raw = localStorage.getItem(LAST_ROOM_KEY);
+              if (raw) {
+                var json = JSON.parse(raw);
+                var tid = String((json && json.tournamentId) || "").trim();
+                var teamId = String((json && json.teamId) || "").trim();
+                if (tid && teamId) {
+                  ctaMiSala.href = "./sala/?tournamentId=" + encodeURIComponent(tid) + "&teamId=" + encodeURIComponent(teamId);
+                  ctaMiSala.classList.remove("hidden");
+                }
+              }
+            }
+          } catch (e) {}
 
           var modal = document.getElementById("mercRulesModal");
           var checkbox = document.getElementById("mercRulesAgree");
