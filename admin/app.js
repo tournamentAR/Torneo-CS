@@ -726,10 +726,7 @@
     overlay.innerHTML = `
       <div class="lockCard">
         <h2 class="lockTitle">Acceso al panel</h2>
-        <p class="lockHint">
-          Si es tu primera vez, crea una contraseña. Si ya existe, ingrésala.
-          (Esto es un bloqueo en el navegador; para seguridad real se necesita backend.)
-        </p>
+        <p class="lockHint">Ingresá la contraseña para acceder al panel.</p>
         <form id="lockForm" class="form">
           <label class="field">
             <span class="field__label">Contraseña</span>
@@ -739,7 +736,6 @@
             <span class="muted small" style="font-family:var(--font-display); font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--muted)">Nivel 2</span>
             <button class="btn btn--primary" type="submit">Entrar</button>
           </div>
-          <p class="muted small">Consejo: no compartas la URL de <code>/admin</code>.</p>
         </form>
       </div>
     `;
