@@ -2,6 +2,7 @@ import express from "express";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import crypto from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -9,6 +10,109 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 app.use(express.json({ limit: "2mb" }));
+
+// -------- Admin auth (nivel 2) --------
+const ADMIN_PASS_HASH = process.env.ADMIN_PASS_HASH;
+const ADMIN_SESSION_SECRET = process.env.ADMIN_SESSION_SECRET;
+
+function sha256Hex(text) {
+  return crypto.createHash("sha256").update(String(text ?? ""), "utf8").digest("hex");
+}
+
+function parseCookies(cookieHeader) {
+  const out = {};
+  if (!cookieHeader || typeof cookieHeader !== "string") return out;
+  const parts = cookieHeader.split(";").map((s) => s.trim());
+  for (const p of parts) {
+    const idx = p.indexOf("=");
+    if (idx === -1) continue;
+    const k = p.slice(0, idx);
+    const v = p.slice(idx + 1);
+    out[k] = decodeURIComponent(v);
+  }
+  return out;
+}
+
+function signSession(sessionId) {
+  return crypto.createHmac("sha256", String(ADMIN_SESSION_SECRET ?? "")).update(sessionId).digest("hex");
+}
+
+function verifySession(token) {
+  if (!token || typeof token !== "string") return false;
+  const sep = token.lastIndexOf(".");
+  if (sep <= 0) return false;
+  const sessionId = token.slice(0, sep);
+  const signature = token.slice(sep + 1);
+  if (!sessionId || !signature) return false;
+
+  const expected = signSession(sessionId);
+  try {
+    return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
+  } catch {
+    return false;
+  }
+}
+
+function requireAdmin(req, res, next) {
+  if (!ADMIN_PASS_HASH || !ADMIN_SESSION_SECRET) {
+    res.status(500).json({ ok: false, error: "Admin auth no configurado (env missing)." });
+    return;
+  }
+  const cookies = parseCookies(req.headers.cookie);
+  const token = cookies["admin_session"];
+  if (!verifySession(token)) {
+    res.status(401).json({ ok: false, error: "No autorizado" });
+    return;
+  }
+  next();
+}
+
+app.get("/api/admin/me", (req, res) => {
+  try {
+    if (!ADMIN_SESSION_SECRET) return res.json({ ok: false });
+    const cookies = parseCookies(req.headers.cookie);
+    const token = cookies["admin_session"];
+    return res.json({ ok: verifySession(token) });
+  } catch {
+    return res.json({ ok: false });
+  }
+});
+
+app.post("/api/admin/login", (req, res) => {
+  try {
+    if (!ADMIN_PASS_HASH || !ADMIN_SESSION_SECRET) {
+      res.status(500).json({ ok: false, error: "Admin auth no configurado (env missing)." });
+      return;
+    }
+    const body = req.body || {};
+    const pass = body.password;
+    if (typeof pass !== "string" || pass.length < 1) {
+      res.status(400).json({ ok: false, error: "Falta password" });
+      return;
+    }
+    const hash = sha256Hex(pass);
+    if (hash !== ADMIN_PASS_HASH) {
+      res.status(403).json({ ok: false, error: "Contraseña incorrecta" });
+      return;
+    }
+    const ts = Date.now();
+    const rand = crypto.randomBytes(16).toString("hex");
+    const sessionId = `${ts}_${rand}`;
+    const signature = signSession(sessionId);
+    const token = `${sessionId}.${signature}`;
+
+    // Cookie de sesión (HttpOnly para que JS no la lea)
+    const isHttps = Boolean(req.secure || req.headers["x-forwarded-proto"] === "https");
+    res.setHeader(
+      "Set-Cookie",
+      `admin_session=${encodeURIComponent(token)}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${60 * 60 * 24 * 7}${isHttps ? "; Secure" : ""}`
+    );
+    res.json({ ok: true });
+  } catch (e) {
+    console.error("/api/admin/login error:", e);
+    res.status(500).json({ ok: false, error: "Server error" });
+  }
+});
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -94,6 +198,16 @@ app.get("/api/data", (_req, res) => {
 });
 
 app.post("/api/data", (req, res) => {
+  // Proteger publicar al público (nivel 2)
+  if (!ADMIN_PASS_HASH || !ADMIN_SESSION_SECRET) {
+    res.status(500).json({ ok: false, error: "Admin auth no configurado (env missing)." });
+    return;
+  }
+  const cookies = parseCookies(req.headers.cookie);
+  if (!verifySession(cookies["admin_session"])) {
+    res.status(401).json({ ok: false, error: "No autorizado" });
+    return;
+  }
   const body = req.body;
   if (!body || typeof body !== "object" || !Array.isArray(body.tournaments)) {
     res.status(400).json({ ok: false, error: "Formato inválido" });

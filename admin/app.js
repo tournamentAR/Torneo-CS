@@ -701,14 +701,25 @@
     await fetch("/api/data", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
       body: JSON.stringify(payload),
     });
   }
 
   // --- Bloqueo por contraseña (cliente) ---
   async function ensureLock() {
-    const unlocked = localStorage.getItem(ADMIN_UNLOCK_KEY) === "1";
-    if (unlocked) return;
+    async function checkAdminSession() {
+      try {
+        const res = await fetch("/api/admin/me", { credentials: "same-origin" });
+        const json = await res.json();
+        return Boolean(json?.ok);
+      } catch {
+        return false;
+      }
+    }
+
+    // Si ya hay sesión válida, no mostramos el lock.
+    if (await checkAdminSession()) return;
 
     const overlay = document.createElement("div");
     overlay.className = "lock";
@@ -738,35 +749,31 @@
     const passInput = /** @type {HTMLInputElement} */ (overlay.querySelector("#lockPass"));
     const btnSetPass = /** @type {HTMLButtonElement} */ (overlay.querySelector("#btnSetPass"));
 
-    btnSetPass.addEventListener("click", async () => {
-      const pass = passInput.value;
-      if (pass.length < 4) {
-        alert("Mínimo 4 caracteres.");
-        return;
-      }
-      const hash = await sha256Hex(pass);
-      localStorage.setItem(ADMIN_PASS_HASH_KEY, hash);
-      alert("Contraseña guardada en este navegador.");
-      passInput.value = "";
-      passInput.focus();
-    });
+    // Nivel 2: el password se valida en el backend.
+    // Deshabilitamos la creación/cambio en local.
+    btnSetPass.disabled = true;
 
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
       const pass = passInput.value;
-      const saved = localStorage.getItem(ADMIN_PASS_HASH_KEY);
-      if (!saved) {
-        alert("Primero crea una contraseña (botón “Crear/cambiar”).");
-        return;
-      }
-      const hash = await sha256Hex(pass);
-      if (hash !== saved) {
+
+      const res = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ password: pass }),
+      });
+
+      if (!res.ok) {
         alert("Contraseña incorrecta.");
         return;
       }
-      localStorage.setItem(ADMIN_UNLOCK_KEY, "1");
+
       overlay.remove();
+      // Cargamos datos reales desde el servidor (Supabase) y desbloqueamos UI.
+      await mergeFromServer();
       render();
+      queueServerSync();
     });
 
     passInput.focus();
@@ -1107,12 +1114,24 @@
 
   // Init
   (async () => {
-    await ensureLock();
-    // si está desbloqueado, render normal
-    if (localStorage.getItem(ADMIN_UNLOCK_KEY) === "1") {
+    // Render normal solo si la cookie del backend es válida.
+    async function checkAdminSession() {
+      try {
+        const res = await fetch("/api/admin/me", { credentials: "same-origin" });
+        const json = await res.json();
+        return Boolean(json?.ok);
+      } catch {
+        return false;
+      }
+    }
+
+    if (await checkAdminSession()) {
       await mergeFromServer();
       render();
       queueServerSync();
+      return;
     }
+
+    await ensureLock();
   })();
 })();
