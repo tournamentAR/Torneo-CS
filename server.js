@@ -156,7 +156,7 @@ function persist(next) {
   const run = async () => {
     data = next;
     if (USE_SUPABASE) {
-      // Guarda estado completo (incluye torneos, llaves y resultados)
+      // Guarda estado completo (incluye torneos, equipos y resultados)
       await supabase.from("app_state").upsert({ id: "default", payload: next });
     } else {
       try {

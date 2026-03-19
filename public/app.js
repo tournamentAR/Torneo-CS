@@ -114,18 +114,18 @@
   function renderBracket(t) {
     const bracket = t.bracket ?? null;
     if (!bracket) {
-      el.bracket.innerHTML = `<div class="empty"><p><strong>Sin llave</strong>.</p></div>`;
+      el.bracket.innerHTML = `<div class="empty"><p><strong>Torneo sin armar</strong>.</p></div>`;
       el.bracketHint.textContent = "";
       return;
     }
 
-    el.bracketHint.textContent = `Generada: ${formatDate(bracket.generatedAt)} · Tamaño: ${bracket.size}`;
+    el.bracketHint.textContent = `Torneo armado: ${formatDate(bracket.generatedAt)} · Tamaño: ${bracket.size}`;
     el.bracket.innerHTML = renderBracketLuma(bracket);
   }
 
   function renderBracketLuma(bracket) {
     const rounds = bracket.rounds ?? [];
-    if (rounds.length === 0) return `<div class="empty"><p><strong>Sin llave</strong>.</p></div>`;
+    if (rounds.length === 0) return `<div class="empty"><p><strong>Torneo sin armar</strong>.</p></div>`;
 
     const totalRounds = rounds.length;
     const size = Number(bracket.size ?? 0) || 8;
@@ -303,8 +303,8 @@
       </g>`;
 
     return `
-      <div class="bracketSvgWrap" title="Bracket estilo Luma">
-        <svg class="bracketSvg" viewBox="0 0 ${svgW} ${svgH}" role="img" aria-label="Llave del torneo">
+      <div class="bracketSvgWrap" title="Torneo y equipos (vista diagrama)">
+        <svg class="bracketSvg" viewBox="0 0 ${svgW} ${svgH}" role="img" aria-label="Torneo y equipos">
           <text class="centerBadge" x="${cx}" y="${badgeY}" text-anchor="middle">GANADOR</text>
           ${trophyPath}
           ${links.join("\n")}

@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Torneos CS — Equipos, Llaves y Resultados</title>
+    <title>Torneos CS — Equipos y torneo</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -15,7 +15,7 @@
       <div class="container header__inner">
         <div>
           <h1 class="title">Torneos Counter-Strike</h1>
-          <p class="subtitle">Equipos confirmados, llave y resultados (solo lectura).</p>
+          <p class="subtitle">Equipos confirmados y torneo (solo lectura).</p>
         </div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end">
           <button id="btnFull" class="pill" type="button" style="cursor:pointer"><strong>Pantalla completa</strong></button>
@@ -37,7 +37,7 @@
 
           <div>
             <div id="selectedTournamentEmpty" class="empty">
-              <p><strong>Selecciona un torneo</strong> para ver equipos, llave y resultados.</p>
+              <p><strong>Seleccioná un torneo</strong> para ver equipos y torneo.</p>
             </div>
 
             <div id="selectedTournamentPanel" class="panel hidden">
@@ -54,7 +54,7 @@
                   <div id="teamList" class="list" aria-live="polite"></div>
                 </div>
                 <div class="card card--inner">
-                  <h4 class="sectionTitle">Llave y resultados</h4>
+                  <h4 class="sectionTitle">Torneo y equipos</h4>
                   <div id="bracket" class="bracket"></div>
                   <p id="bracketHint" class="muted small"></p>
                 </div>

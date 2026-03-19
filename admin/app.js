@@ -98,7 +98,7 @@
               if (!m.result) m.result = { aScore: null, bScore: null, winner: null, updatedAt: null };
               if (m.result.updatedAt === undefined) m.result.updatedAt = null;
               if (typeof m.result.connectUrl !== "string") m.result.connectUrl = null;
-              // Si viene de una versión vieja sin "from", dejamos tal cual (se regenerará si creas llave de nuevo)
+              // Si viene de una versión vieja sin "from", dejamos tal cual (se regenerará si armás el torneo de nuevo)
             }
           }
         }
@@ -208,7 +208,7 @@
     const confirmed = t.teams.filter((x) => x.confirmed);
     const minTeams = 2;
     if (confirmed.length < minTeams) {
-      return { bracket: null, reason: `Confirma al menos ${minTeams} equipos para generar la llave.` };
+      return { bracket: null, reason: `Confirma al menos ${minTeams} equipos para armar el torneo.` };
     }
     if (confirmed.length > t.cap) {
       return { bracket: null, reason: `Hay más equipos confirmados (${confirmed.length}) que el cupo (${t.cap}).` };
@@ -419,12 +419,12 @@
   function renderBracket(t) {
     const bracket = t.bracket ?? null;
     if (!bracket) {
-      el.bracket.innerHTML = `<div class="empty"><p><strong>Sin llave</strong>. Confirma equipos y presiona “Generar llave”.</p></div>`;
+      el.bracket.innerHTML = `<div class="empty"><p><strong>Torneo sin armar</strong>. Confirmá equipos y presioná "Armar torneo".</p></div>`;
       el.bracketHint.textContent = "";
       return;
     }
 
-    el.bracketHint.textContent = `Generada: ${formatDate(bracket.generatedAt)} · Tamaño: ${bracket.size} (eliminación directa)`;
+    el.bracketHint.textContent = `Torneo armado: ${formatDate(bracket.generatedAt)} · Tamaño: ${bracket.size} (eliminación directa)`;
     el.bracket.innerHTML = bracket.rounds
       .map((r) => {
         return `
@@ -662,7 +662,7 @@
   }
 
   function buildPublicData() {
-    // Solo lo que necesita la web pública (sin llaves internas del panel)
+    // Solo lo que necesita la web pública (sin datos internos del panel)
     return {
       exportedAt: Date.now(),
       tournaments: state.tournaments.map((t) => ({
@@ -1003,7 +1003,7 @@
     const { bracket, reason } = generateBracket(t);
     if (!bracket) {
       el.bracketHint.textContent = "";
-      el.bracket.innerHTML = `<div class="empty"><p><strong>No se pudo generar</strong>. ${escapeHtml(reason ?? "Revisa equipos confirmados.")}</p></div>`;
+      el.bracket.innerHTML = `<div class="empty"><p><strong>No se pudo armar el torneo</strong>. ${escapeHtml(reason ?? "Revisá equipos confirmados.")}</p></div>`;
       // Igual sincronizamos el estado actual (equipos/confirmaciones) al público
       syncToServer().catch(() => {});
       return;
