@@ -140,8 +140,32 @@ app.get("/api/stream", (req, res) => {
   });
 });
 
-// Static
-app.use(express.static(__dirname));
+// Static (Vercel: express.static() se ignora)
+app.get("*", (req, res) => {
+  try {
+    const reqPath = decodeURIComponent(req.path || "/");
+    const relativePath = reqPath.replace(/^\/+/, "");
+    const wanted = relativePath === "" ? "index.html" : relativePath;
+    const finalRel = wanted.endsWith("/") ? `${wanted}index.html` : wanted;
+    const filePath = path.join(__dirname, finalRel);
+
+    // Seguridad básica anti traversal
+    if (!filePath.startsWith(__dirname)) {
+      res.status(400).send("Bad request");
+      return;
+    }
+
+    if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+      res.sendFile(filePath);
+      return;
+    }
+
+    res.status(404).send(`Cannot GET ${reqPath}`);
+  } catch (err) {
+    console.error("Static handler error:", err);
+    res.status(500).send("Server error");
+  }
+});
 
 const port = Number(process.env.PORT ?? 5173);
 app.listen(port, "0.0.0.0", () => {
