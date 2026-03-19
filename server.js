@@ -145,11 +145,14 @@ function sendIfExists(filePath, res) {
 const ROOT_ADMIN_DIR = path.join(__dirname, "admin");
 const ROOT_INSCRIBIRSE_DIR = path.join(__dirname, "inscribirse");
 
-app.get("/admin", (req, res) => res.redirect("/admin/"));
-app.get("/admin/", (req, res) => {
+function sendAdminIndex(res) {
   const ok = sendIfExists(path.join(ROOT_ADMIN_DIR, "index.html"), res);
   if (!ok) res.status(404).send("Cannot GET /admin/");
-});
+}
+
+app.get("/admin", (req, res) => sendAdminIndex(res));
+app.get("/admin/", (req, res) => sendAdminIndex(res));
+app.get("/admin/index.html", (req, res) => sendAdminIndex(res));
 app.get("/admin/app.js", (req, res) => {
   const ok = sendIfExists(path.join(ROOT_ADMIN_DIR, "app.js"), res);
   if (!ok) res.status(404).send("Cannot GET /admin/app.js");
@@ -159,11 +162,14 @@ app.get("/admin/styles.css", (req, res) => {
   if (!ok) res.status(404).send("Cannot GET /admin/styles.css");
 });
 
-app.get("/inscribirse", (req, res) => res.redirect("/inscribirse/"));
-app.get("/inscribirse/", (req, res) => {
+function sendInscribirseIndex(res) {
   const ok = sendIfExists(path.join(ROOT_INSCRIBIRSE_DIR, "index.html"), res);
   if (!ok) res.status(404).send("Cannot GET /inscribirse/");
-});
+}
+
+app.get("/inscribirse", (req, res) => sendInscribirseIndex(res));
+app.get("/inscribirse/", (req, res) => sendInscribirseIndex(res));
+app.get("/inscribirse/index.html", (req, res) => sendInscribirseIndex(res));
 app.get("/inscribirse/app.js", (req, res) => {
   const ok = sendIfExists(path.join(ROOT_INSCRIBIRSE_DIR, "app.js"), res);
   if (!ok) res.status(404).send("Cannot GET /inscribirse/app.js");
