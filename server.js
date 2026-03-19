@@ -326,9 +326,17 @@ app.get("/api/waiting-room", async (req, res) => {
     }
 
     const rounds = Array.isArray(t?.bracket?.rounds) ? t.bracket.rounds : [];
-    const firstRound = rounds.find((r) => Number(r?.round) === 1) ?? rounds[0] ?? null;
-    const matches = Array.isArray(firstRound?.matches) ? firstRound.matches : [];
-    const match = matches.find((m) => m?.a?.teamId === teamId || m?.b?.teamId === teamId) ?? null;
+    let match = null;
+    let matchRound = null;
+    for (const round of rounds) {
+      const matches = Array.isArray(round?.matches) ? round.matches : [];
+      const found = matches.find((m) => m?.a?.teamId === teamId || m?.b?.teamId === teamId) ?? null;
+      if (found) {
+        match = found;
+        matchRound = round;
+        break;
+      }
+    }
 
     const rivalTeamName = match
       ? (match.a?.teamId === teamId ? (match.b?.teamName ?? null) : (match.a?.teamName ?? null))
@@ -343,10 +351,8 @@ app.get("/api/waiting-room", async (req, res) => {
         ? (winner === ownSide ? "ganado" : "perdido")
         : "listo";
 
-    const connectIp = t.connectIp ?? null;
-    const connectPort = t.connectPort ?? null;
-    const connectAddress = connectIp && connectPort ? `${connectIp}:${connectPort}` : null;
-    const connectUrl = connectAddress ? `steam://connect/${connectAddress}` : null;
+    const connectUrlRaw = typeof match?.result?.connectUrl === "string" ? match.result.connectUrl.trim() : "";
+    const connectUrl = connectUrlRaw || null;
 
     res.json({
       ok: true,
@@ -365,14 +371,14 @@ app.get("/api/waiting-room", async (req, res) => {
       },
       match: match
         ? {
-            round: firstRound?.round ?? 1,
+            round: Number(matchRound?.round ?? 1),
             number: match.match ?? null,
             rivalTeamName,
             status,
           }
         : null,
       connection: {
-        address: connectAddress,
+        address: connectUrl ? "Link xplay asignado" : null,
         connectUrl,
       },
     });

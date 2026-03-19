@@ -7,12 +7,12 @@
   const ADMIN_UNLOCK_KEY = "cs_admin_unlocked_v1";
 
   /** @typedef {{id:string,name:string,confirmed:boolean,createdAt:number,players:string[],repNumber?:string|null,discord?:string|null}} Team */
-  /** @typedef {{aScore:number|null,bScore:number|null,winner:"a"|"b"|null,updatedAt:number|null}} MatchResult */
+  /** @typedef {{aScore:number|null,bScore:number|null,winner:"a"|"b"|null,updatedAt:number|null,connectUrl?:string|null}} MatchResult */
   /** @typedef {{round:number,match:number}} MatchRef */
   /** @typedef {{seed:number,teamId:string|null,teamName:string,bye:boolean,from?:{ref:MatchRef,side:"a"|"b"}}} BracketSlot */
   /** @typedef {{match:number,a:BracketSlot,b:BracketSlot,result:MatchResult}} BracketMatch */
   /** @typedef {{size:number,rounds:{round:number,title:string,matches:BracketMatch[]}[],generatedAt:number}} Bracket */
-  /** @typedef {{id:string,name:string,mode:"1v1"|"2v2"|"5v5",cap:number,createdAt:number,dateAt?:string,platform?:string,server?:string,connectIp?:string|null,connectPort?:string|null,isFree:boolean,fee?:number|null,teams:Team[],bracket?:Bracket}} Tournament */
+  /** @typedef {{id:string,name:string,mode:"1v1"|"2v2"|"5v5",cap:number,createdAt:number,dateAt?:string,platform?:string,server?:string,isFree:boolean,fee?:number|null,teams:Team[],bracket?:Bracket}} Tournament */
 
   const $ = (id) => /** @type {HTMLElement} */ (document.getElementById(id));
 
@@ -24,8 +24,6 @@
     tournamentDate: $("tournamentDate"),
     tournamentPlatform: $("tournamentPlatform"),
     tournamentServer: $("tournamentServer"),
-    tournamentConnectIp: $("tournamentConnectIp"),
-    tournamentConnectPort: $("tournamentConnectPort"),
     tournamentIsFree: $("tournamentIsFree"),
     tournamentFee: $("tournamentFee"),
     tournamentList: $("tournamentList"),
@@ -38,8 +36,6 @@
     tournamentFeeEdit: $("tournamentFeeEdit"),
     tournamentPlatformEdit: $("tournamentPlatformEdit"),
     tournamentServerEdit: $("tournamentServerEdit"),
-    tournamentConnectIpEdit: $("tournamentConnectIpEdit"),
-    tournamentConnectPortEdit: $("tournamentConnectPortEdit"),
     addTeamHeader: $("addTeamHeader"),
 
     addTeamForm: $("addTeamForm"),
@@ -90,8 +86,6 @@
         }
         if (typeof t.platform !== "string" || !t.platform.trim()) t.platform = "xplay.gg";
         if (typeof t.server !== "string" || !t.server.trim()) t.server = "Buenos Aires";
-        if (typeof t.connectIp !== "string") t.connectIp = null;
-        if (typeof t.connectPort !== "string") t.connectPort = null;
         for (const team of t.teams ?? []) {
           if (!Array.isArray(team.players)) team.players = [];
         }
@@ -103,6 +97,7 @@
             for (const m of r.matches ?? []) {
               if (!m.result) m.result = { aScore: null, bScore: null, winner: null, updatedAt: null };
               if (m.result.updatedAt === undefined) m.result.updatedAt = null;
+              if (typeof m.result.connectUrl !== "string") m.result.connectUrl = null;
               // Si viene de una versión vieja sin "from", dejamos tal cual (se regenerará si creas llave de nuevo)
             }
           }
@@ -202,7 +197,7 @@
 
   /** @returns {MatchResult} */
   function emptyResult() {
-    return { aScore: null, bScore: null, winner: null, updatedAt: null };
+    return { aScore: null, bScore: null, winner: null, updatedAt: null, connectUrl: null };
   }
 
   /**
@@ -297,7 +292,6 @@
         const confirmedCount = t.teams.filter((x) => x.confirmed).length;
         const totalCount = t.teams.length;
         const dateStr = t.dateAt ? formatTournamentDate(t.dateAt) : "";
-        const connectMeta = t.connectIp && t.connectPort ? `connect ${t.connectIp}:${t.connectPort}` : null;
         const meta = [
           t.mode,
           dateStr,
@@ -305,7 +299,6 @@
           `equipos ${totalCount} (confirmados ${confirmedCount})`,
           `plataforma ${t.platform ?? "xplay.gg"}`,
           `servidor ${t.server ?? "Buenos Aires"}`,
-          connectMeta,
         ]
           .filter(Boolean)
           .join(" · ");
@@ -342,8 +335,7 @@
     el.selectedTournamentTitle.textContent = t.name;
 
     const inscriptionText = t.isFree ? "inscripción gratis" : `inscripción $${t.fee ?? 0}`;
-    const connectText = t.connectIp && t.connectPort ? ` · connect ${t.connectIp}:${t.connectPort}` : "";
-    el.selectedTournamentMeta.textContent = `${t.mode} · ${modeToPlayers(t.mode)} jugadores por equipo · cupo ${t.cap} · creado ${formatDate(t.createdAt)} · ${inscriptionText} · ${t.platform ?? "xplay.gg"} · ${t.server ?? "Buenos Aires"}${connectText}`;
+    el.selectedTournamentMeta.textContent = `${t.mode} · ${modeToPlayers(t.mode)} jugadores por equipo · cupo ${t.cap} · creado ${formatDate(t.createdAt)} · ${inscriptionText} · ${t.platform ?? "xplay.gg"} · ${t.server ?? "Buenos Aires"}`;
     if (el.addTeamHeader) {
       el.addTeamHeader.textContent = t.isFree ? "Registrar equipo (gratis)" : `Registrar equipo (pago: $${t.fee ?? 0})`;
     }
@@ -362,13 +354,6 @@
     if (el.tournamentServerEdit) {
       el.tournamentServerEdit.value = t.server ?? "Buenos Aires";
     }
-    if (el.tournamentConnectIpEdit) {
-      el.tournamentConnectIpEdit.value = t.connectIp ?? "";
-    }
-    if (el.tournamentConnectPortEdit) {
-      el.tournamentConnectPortEdit.value = t.connectPort ?? "";
-    }
-
     renderTeamList(t);
     renderBracket(t);
   }
@@ -482,12 +467,17 @@
     const res = match.result ?? emptyResult();
     const winner = res.winner;
     const showWinner = winner === "a" || winner === "b";
+    const connectUrl = typeof res.connectUrl === "string" ? res.connectUrl : "";
 
     return `
       <div class="match" data-round="${round}" data-match="${match.match}">
         ${renderSlot(match.a, canEditScores ? res.aScore : null, canEditScores ? "a" : null, winner === "a", !canEditScores)}
         ${renderSlot(match.b, canEditScores ? res.bScore : null, canEditScores ? "b" : null, winner === "b", !canEditScores)}
         ${showWinner ? `<div class="slot" style="border-top:1px solid rgba(255,255,255,.10)"><span class="muted">Ganador</span><span class="winnerTag">${escapeHtml(winner === "a" ? match.a.teamName : match.b.teamName)}</span></div>` : ""}
+        <div class="slot" style="border-top:1px solid rgba(255,255,255,.10);display:block">
+          <div class="slot__tag" style="margin-bottom:8px">Link de conexión (xplay.gg) para este versus</div>
+          <input class="input input--small" type="url" placeholder="https://xplay.gg/match/..." value="${escapeHtml(connectUrl)}" data-action="xplay-url" />
+        </div>
       </div>
     `;
   }
@@ -680,8 +670,6 @@
         createdAt: t.createdAt,
         platform: t.platform ?? "xplay.gg",
         server: t.server ?? "Buenos Aires",
-        connectIp: t.connectIp ?? null,
-        connectPort: t.connectPort ?? null,
         isFree: t.isFree ?? true,
         fee: t.fee ?? null,
         teams: t.teams.map((x) => ({
@@ -803,8 +791,6 @@
     const dateAt = (el.tournamentDate && el.tournamentDate.value) ? el.tournamentDate.value : undefined;
     const platform = (el.tournamentPlatform?.value ?? "xplay.gg").trim() || "xplay.gg";
     const server = (el.tournamentServer?.value ?? "Buenos Aires").trim() || "Buenos Aires";
-    const connectIp = (el.tournamentConnectIp?.value ?? "").trim() || null;
-    const connectPort = (el.tournamentConnectPort?.value ?? "").trim() || null;
     const isFree = Boolean(el.tournamentIsFree?.checked);
     const feeRaw = el.tournamentFee?.value ?? "";
     const feeNum = feeRaw === "" ? null : Number(feeRaw);
@@ -823,8 +809,6 @@
       dateAt: dateAt || undefined,
       platform,
       server,
-      connectIp,
-      connectPort,
       isFree,
       fee: isFree ? null : feeNum,
       teams: [],
@@ -839,8 +823,6 @@
     if (el.tournamentDate) el.tournamentDate.value = "";
     if (el.tournamentPlatform) el.tournamentPlatform.value = "xplay.gg";
     if (el.tournamentServer) el.tournamentServer.value = "Buenos Aires";
-    if (el.tournamentConnectIp) el.tournamentConnectIp.value = "";
-    if (el.tournamentConnectPort) el.tournamentConnectPort.value = "";
     if (el.tournamentIsFree) el.tournamentIsFree.checked = true;
     if (el.tournamentFee) el.tournamentFee.value = "";
     syncCreateInscriptionUI();
@@ -908,20 +890,6 @@
     const t = getSelectedTournament();
     if (!t) return;
     t.server = (el.tournamentServerEdit?.value ?? "Buenos Aires").trim() || "Buenos Aires";
-    upsertTournament(t);
-  });
-
-  el.tournamentConnectIpEdit?.addEventListener("change", () => {
-    const t = getSelectedTournament();
-    if (!t) return;
-    t.connectIp = (el.tournamentConnectIpEdit?.value ?? "").trim() || null;
-    upsertTournament(t);
-  });
-
-  el.tournamentConnectPortEdit?.addEventListener("change", () => {
-    const t = getSelectedTournament();
-    if (!t) return;
-    t.connectPort = (el.tournamentConnectPortEdit?.value ?? "").trim() || null;
     upsertTournament(t);
   });
 
@@ -1045,7 +1013,7 @@
 
   el.bracket.addEventListener("input", (e) => {
     const target = /** @type {HTMLElement} */ (e.target);
-    const inp = target.closest("input[data-action='score']");
+    const inp = target.closest("input[data-action='score'], input[data-action='xplay-url']");
     if (!inp) return;
     const t = getSelectedTournament();
     if (!t?.bracket) return;
@@ -1061,14 +1029,22 @@
     const m = r?.matches.find((x) => x.match === matchNo);
     if (!m) return;
 
-    const score = sanitizeScore(/** @type {HTMLInputElement} */ (inp).value);
-    if (side === "a") m.result.aScore = score;
-    if (side === "b") m.result.bScore = score;
-    m.result.winner = computeWinner(m);
-    m.result.updatedAt = Date.now();
-    // Propagar ganador hacia siguientes rondas
-    propagateAll(t.bracket);
+    const action = inp.getAttribute("data-action");
+    if (action === "xplay-url") {
+      const nextUrl = (/** @type {HTMLInputElement} */ (inp).value ?? "").trim();
+      m.result.connectUrl = nextUrl || null;
+      m.result.updatedAt = Date.now();
+    } else {
+      const score = sanitizeScore(/** @type {HTMLInputElement} */ (inp).value);
+      if (side === "a") m.result.aScore = score;
+      if (side === "b") m.result.bScore = score;
+      m.result.winner = computeWinner(m);
+      m.result.updatedAt = Date.now();
+      // Propagar ganador hacia siguientes rondas
+      propagateAll(t.bracket);
+    }
     saveState();
+    queueServerSync();
 
     // Re-render solo panel (simple)
     renderSelectedTournament();
@@ -1108,8 +1084,6 @@
       dateAt: new Date(now).toISOString().slice(0, 10),
       platform: "xplay.gg",
       server: "Buenos Aires",
-      connectIp: null,
-      connectPort: null,
       isFree: true,
       fee: null,
       teams: [

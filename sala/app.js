@@ -75,7 +75,7 @@
       teamName.textContent = own.name || "Tu equipo";
       rivalName.textContent = m.rivalTeamName || "Por definir";
       matchStatus.textContent = statusText(m.status);
-      serverAddress.textContent = conn.address || "Sin asignar";
+      serverAddress.textContent = conn.address || "Sin link asignado";
 
       if (conn.connectUrl) {
         btnConnect.href = conn.connectUrl;
