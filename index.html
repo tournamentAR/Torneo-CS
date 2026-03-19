@@ -42,23 +42,6 @@
         position: relative;
       }
 
-      /* Escaneo de datos — línea cian suave */
-      .scanner-line {
-        position: fixed;
-        left: 0;
-        right: 0;
-        height: 1px;
-        background: linear-gradient(90deg, transparent, var(--cyan), transparent);
-        opacity: 0.35;
-        pointer-events: none;
-        z-index: 9999;
-        animation: scanner-sweep 5s linear infinite;
-      }
-      @keyframes scanner-sweep {
-        0% { top: 0; }
-        100% { top: 100vh; }
-      }
-
       .wrap {
         max-width: 520px;
         width: 100%;
@@ -562,7 +545,6 @@
     </style>
   </head>
   <body>
-    <div class="scanner-line" aria-hidden="true"></div>
     <div class="wrap">
       <h1 class="logo">Torneos CS</h1>
       <p class="tagline">Creá torneos, inscribí equipos y mostrá equipos y torneo en vivo.</p>

@@ -12,7 +12,6 @@
   --ok: #8cffc5;
   --danger: #ff5b74;
   --chip: 10px;
-  --scanner: rgba(0, 212, 255, 0.4);
   --font-display: 'Orbitron', sans-serif;
   --font-body: 'Rajdhani', sans-serif;
 }
@@ -31,22 +30,6 @@ body {
   background-size: 24px 24px;
   min-height: 100vh;
   position: relative;
-}
-
-.scanner-line {
-  position: fixed;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, var(--scanner), transparent);
-  box-shadow: 0 0 8px var(--scanner);
-  pointer-events: none;
-  z-index: 9999;
-  animation: scanner-sweep 4s linear infinite;
-}
-@keyframes scanner-sweep {
-  0% { top: 0; opacity: 0.8; }
-  100% { top: 100vh; opacity: 0.8; }
 }
 
 .container { max-width: 560px; margin: 0 auto; padding: 0 18px; }

@@ -24,19 +24,6 @@ body {
   background-size: 24px 24px;
 }
 
-.scanner-line {
-  position: fixed;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.4), transparent);
-  box-shadow: 0 0 8px rgba(0, 212, 255, 0.5);
-  pointer-events: none;
-  z-index: 9999;
-  animation: scan 4s linear infinite;
-}
-@keyframes scan { from { top: 0; } to { top: 100vh; } }
-
 .container { max-width: 820px; margin: 0 auto; padding: 0 18px; }
 .main { padding: 20px 0 40px; }
 

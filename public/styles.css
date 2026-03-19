@@ -16,7 +16,6 @@
   --text: #e8eefc;
   --text-muted: #9aa9c7;
   --border: rgba(255, 149, 0, 0.25);
-  --scanner: rgba(0, 212, 255, 0.4);
   --ok: #8cffc5;
   --danger: #ff5b74;
   --font-display: 'Orbitron', sans-serif;
@@ -39,23 +38,6 @@ body {
   background-size: 24px 24px;
   position: relative;
   overflow-x: hidden;
-}
-
-/* ---- Scanner effect (horizontal line moving top to bottom) ---- */
-.scanner-line {
-  position: fixed;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, var(--scanner), transparent);
-  box-shadow: 0 0 8px var(--scanner);
-  pointer-events: none;
-  z-index: 9999;
-  animation: scanner-sweep 4s linear infinite;
-}
-@keyframes scanner-sweep {
-  0% { top: 0; opacity: 0.8; }
-  100% { top: 100vh; opacity: 0.8; }
 }
 
 /* ---- Layout ---- */
