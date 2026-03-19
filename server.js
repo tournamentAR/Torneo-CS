@@ -147,7 +147,17 @@ app.use((req, res) => {
     const reqPath = decodeURIComponent(req.path || "/");
     const relativePath = reqPath.replace(/^\/+/, "");
     const wanted = relativePath === "" ? "index.html" : relativePath;
-    const finalRel = wanted.endsWith("/") ? `${wanted}index.html` : wanted;
+    // Normalizamos a uno o varios targets: archivo directo o index de carpeta.
+    const targets = [];
+    if (wanted === "index.html") {
+      targets.push("index.html");
+    } else {
+      // Si venía con '/', por ejemplo: "admin/" => "admin/index.html"
+      if (wanted.endsWith("/")) targets.push(`${wanted}index.html`);
+      // Si venía sin '/', probamos archivo directo y luego index de carpeta
+      targets.push(wanted);
+      targets.push(`${wanted}/index.html`);
+    }
 
     // En Vercel, __dirname puede no contener los archivos del proyecto.
     // Usamos process.cwd() como "base" real del runtime.
@@ -172,22 +182,25 @@ app.use((req, res) => {
     }
     // Priorizamos la raíz del proyecto. En Vercel `cwd` puede apuntar a `public/`
     // y hacer que `/` cargue el index equivocado.
-    const candidates = [
-      path.join(__dirname, finalRel),
-      path.join(cwdBase, finalRel),
-      // fallback: si por alguna razón solo está en public/
-      path.join(__dirname, "public", finalRel),
-      path.join(cwdBase, "public", finalRel),
-      path.join(__dirname, "..", "public", finalRel),
+    const bases = [
+      __dirname,
+      cwdBase,
+      path.join(__dirname, "public"),
+      path.join(cwdBase, "public"),
+      path.join(__dirname, "..", "public"),
     ];
 
     // Seguridad anti traversal: el candidato debe estar dentro de una de las bases esperadas.
-    for (const filePath of candidates) {
-      const safeBases = [cwdBase, __dirname, path.join(__dirname, ".."), path.join(cwdBase, "public")];
-      if (!safeBases.some((b) => filePath.startsWith(b))) continue;
-      if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
-        res.sendFile(filePath);
-        return;
+    const safeBases = [cwdBase, __dirname, path.join(__dirname, ".."), path.join(cwdBase, "public"), path.join(__dirname, "public")];
+
+    for (const t of targets) {
+      const candidates = bases.map((b) => path.join(b, t));
+      for (const filePath of candidates) {
+        if (!safeBases.some((sb) => filePath.startsWith(sb))) continue;
+        if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+          res.sendFile(filePath);
+          return;
+        }
       }
     }
 
