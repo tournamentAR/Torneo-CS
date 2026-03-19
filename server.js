@@ -141,7 +141,8 @@ app.get("/api/stream", (req, res) => {
 });
 
 // Static (Vercel: express.static() se ignora)
-app.get("*", (req, res) => {
+// Catch-all con app.use para evitar patrones inválidos en Express 5.
+app.use((req, res) => {
   try {
     const reqPath = decodeURIComponent(req.path || "/");
     const relativePath = reqPath.replace(/^\/+/, "");
