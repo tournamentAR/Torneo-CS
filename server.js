@@ -167,8 +167,13 @@ app.get("*", (req, res) => {
   }
 });
 
-const port = Number(process.env.PORT ?? 5173);
-app.listen(port, "0.0.0.0", () => {
-  console.log(`Server running on http://localhost:${port}`);
-});
+export default app;
+
+// Solo escuchamos en local. En Vercel (serverless) se usa el export.
+if (!process.env.VERCEL) {
+  const port = Number(process.env.PORT ?? 5173);
+  app.listen(port, "0.0.0.0", () => {
+    console.log(`Server running on http://localhost:${port}`);
+  });
+}
 
