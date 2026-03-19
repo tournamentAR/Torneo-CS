@@ -736,7 +736,7 @@
             <input id="lockPass" class="input" type="password" minlength="4" required />
           </label>
           <div class="form__actions" style="justify-content:space-between">
-            <button id="btnSetPass" class="btn btn--ghost" type="button">Crear/cambiar</button>
+            <span class="muted small" style="font-family:var(--font-display); font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--muted)">Nivel 2</span>
             <button class="btn btn--primary" type="submit">Entrar</button>
           </div>
           <p class="muted small">Consejo: no compartas la URL de <code>/admin</code>.</p>
@@ -747,11 +747,6 @@
 
     const form = /** @type {HTMLFormElement} */ (overlay.querySelector("#lockForm"));
     const passInput = /** @type {HTMLInputElement} */ (overlay.querySelector("#lockPass"));
-    const btnSetPass = /** @type {HTMLButtonElement} */ (overlay.querySelector("#btnSetPass"));
-
-    // Nivel 2: el password se valida en el backend.
-    // Deshabilitamos la creación/cambio en local.
-    btnSetPass.disabled = true;
 
     form.addEventListener("submit", async (e) => {
       e.preventDefault();

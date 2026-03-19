@@ -26,10 +26,45 @@ body {
   color: var(--text);
   background-color: var(--bg-deep);
   background-image:
-    linear-gradient(rgba(255, 149, 0, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 149, 0, 0.03) 1px, transparent 1px);
-  background-size: 24px 24px;
+    repeating-linear-gradient(
+      0deg,
+      rgba(255, 149, 0, 0.06) 0px,
+      rgba(255, 149, 0, 0.06) 1px,
+      transparent 1px,
+      transparent 8px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgba(0, 212, 255, 0.045) 0px,
+      rgba(0, 212, 255, 0.045) 1px,
+      transparent 1px,
+      transparent 8px
+    );
+  background-size: auto;
   position: relative;
+}
+
+/* Pixel scanlines / retro render */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.20) 0px,
+    rgba(0, 0, 0, 0.20) 1px,
+    transparent 2px,
+    transparent 4px
+  );
+  opacity: 0.22;
+  mix-blend-mode: overlay;
+}
+
+body > * {
+  position: relative;
+  z-index: 1;
 }
 
 .scanner-line {
