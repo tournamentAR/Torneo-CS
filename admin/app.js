@@ -1084,32 +1084,19 @@
     render();
   });
 
-  /** Trae inscripciones del servidor y las fusiona al estado local (equipos con id que no existían) */
+  /** Carga torneos completos desde el servidor (fuente de verdad: Supabase). */
   async function mergeFromServer() {
     try {
       const res = await fetch("/api/data");
       const remote = await res.json();
       if (!remote || !Array.isArray(remote.tournaments)) return;
-      let changed = false;
-      for (const st of remote.tournaments) {
-        const local = state.tournaments.find((t) => t.id === st.id);
-        if (!local) continue;
-        if (typeof st.isFree === "boolean") local.isFree = st.isFree;
-        if ("fee" in st) {
-          const feeNum = st.fee === null || st.fee === undefined ? null : Number(st.fee);
-          local.fee = feeNum === null || Number.isFinite(feeNum) ? feeNum : null;
-        }
-        const localIds = new Set((local.teams || []).map((x) => x.id));
-        const extra = (st.teams || []).filter((team) => !localIds.has(team.id));
-        if (extra.length > 0) {
-          local.teams = [...(local.teams || []), ...extra];
-          changed = true;
-        }
-      }
-      if (changed) {
-        saveState();
-        render();
-      }
+      const nextTournaments = remote.tournaments;
+      state.tournaments = nextTournaments;
+      const currentSelected = state.selectedTournamentId;
+      const stillExists = currentSelected && nextTournaments.some((t) => t.id === currentSelected);
+      state.selectedTournamentId = stillExists ? currentSelected : nextTournaments[0]?.id ?? null;
+      saveState();
+      render();
     } catch {
       // sin servidor: no hacer nada
     }

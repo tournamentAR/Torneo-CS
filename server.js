@@ -2,12 +2,18 @@ import express from "express";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { createClient } from "@supabase/supabase-js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 app.use(express.json({ limit: "2mb" }));
+
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const USE_SUPABASE = Boolean(SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY);
+const supabase = USE_SUPABASE ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY) : null;
 
 const DATA_FILE = path.join(__dirname, "data-store.json");
 
@@ -22,21 +28,49 @@ try {
   // ignore
 }
 
+async function getStateSupabase() {
+  if (!supabase) return data;
+  const { data: row, error } = await supabase.from("app_state").select("payload").eq("id", "default").single();
+  if (error) {
+    // Si no existe la fila, la inicializamos.
+    const code = String(error?.code || "");
+    const msg = String(error?.message || "").toLowerCase();
+    if (code === "PGRST116" || msg.includes("no rows") || msg.includes("0 rows")) {
+      const init = { exportedAt: Date.now(), tournaments: [] };
+      await supabase.from("app_state").upsert({ id: "default", payload: init });
+      return init;
+    }
+    throw error;
+  }
+  return row?.payload ?? { exportedAt: Date.now(), tournaments: [] };
+}
+
 /** @type {Set<import("express").Response>} */
 const sseClients = new Set();
 
 function persist(next) {
-  data = next;
-  try {
-    fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), "utf8");
-  } catch {
-    // ignore
-  }
-  // broadcast SSE
-  const payload = `data: ${JSON.stringify({ type: "data", data })}\n\n`;
-  for (const res of sseClients) {
-    res.write(payload);
-  }
+  const run = async () => {
+    data = next;
+    if (USE_SUPABASE) {
+      // Guarda estado completo (incluye torneos, llaves y resultados)
+      await supabase.from("app_state").upsert({ id: "default", payload: next });
+    } else {
+      try {
+        fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), "utf8");
+      } catch {
+        // ignore
+      }
+    }
+    // broadcast SSE (solo a conexiones del mismo runtime)
+    const payload = `data: ${JSON.stringify({ type: "data", data })}\n\n`;
+    for (const res of sseClients) {
+      res.write(payload);
+    }
+  };
+  return run().catch((e) => {
+    console.error("persist() failed:", e);
+    if (USE_SUPABASE) throw e;
+  });
 }
 
 app.get("/api/health", (_req, res) => {
@@ -46,6 +80,16 @@ app.get("/api/health", (_req, res) => {
 
 app.get("/api/data", (_req, res) => {
   res.setHeader("Cache-Control", "no-store");
+  if (USE_SUPABASE) {
+    getStateSupabase()
+      .then((s) => {
+        res.json(s);
+      })
+      .catch(() => {
+        res.status(500).json({ exportedAt: Date.now(), tournaments: [] });
+      });
+    return;
+  }
   res.json(data);
 });
 
@@ -55,14 +99,16 @@ app.post("/api/data", (req, res) => {
     res.status(400).json({ ok: false, error: "Formato inválido" });
     return;
   }
-  persist({ exportedAt: Date.now(), tournaments: body.tournaments });
-  res.json({ ok: true });
+  const next = { exportedAt: Date.now(), tournaments: body.tournaments };
+  persist(next)
+    .then(() => res.json({ ok: true }))
+    .catch(() => res.status(500).json({ ok: false, error: "No se pudo persistir en Supabase" }));
 });
 
 /** Inscripción pública: agregar equipo a un torneo (confirmed: false) */
 const PLAYERS_BY_MODE = { "1v1": 1, "2v2": 2, "5v5": 5 };
 function handleRegister(req, res) {
-  try {
+  const run = async () => {
     const body = req.body || {};
     if (typeof body.tournamentId !== "string" || typeof body.teamName !== "string") {
       res.status(400).json({ ok: false, error: "Faltan tournamentId o teamName" });
@@ -79,7 +125,8 @@ function handleRegister(req, res) {
       res.status(400).json({ ok: false, error: "El nombre del equipo es obligatorio" });
       return;
     }
-    const tournaments = Array.isArray(data.tournaments) ? data.tournaments : [];
+    const current = USE_SUPABASE ? await getStateSupabase() : data;
+    const tournaments = Array.isArray(current.tournaments) ? current.tournaments : [];
     const tournament = tournaments.find((t) => t && t.id === tournamentId);
     if (!tournament) {
       res.status(404).json({ ok: false, error: "Torneo no encontrado" });
@@ -110,18 +157,20 @@ function handleRegister(req, res) {
       discord: discord || null,
     };
     const next = {
-      ...data,
+      ...current,
       exportedAt: Date.now(),
-      tournaments: (data.tournaments || []).map((t) =>
+      tournaments: (current.tournaments || []).map((t) =>
         t && t.id === tournamentId ? { ...t, teams: [...(t.teams || []), newTeam] } : t
       ),
     };
-    persist(next);
+    // Nota: mantenemos el comportamiento previo, persistiendo el estado completo.
+    await persist(next);
     res.json({ ok: true, teamId: newTeam.id });
-  } catch (err) {
+  };
+  run().catch((err) => {
     console.error("/api/register error:", err);
     res.status(500).json({ ok: false, error: "Error en el servidor. Revisá la consola." });
-  }
+  });
 }
 app.post("/api/register", handleRegister);
 app.post("/api/register/", handleRegister);
