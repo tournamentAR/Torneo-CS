@@ -152,10 +152,13 @@ app.use((req, res) => {
     // En Vercel, __dirname puede no contener los archivos del proyecto.
     // Usamos process.cwd() como "base" real del runtime.
     const cwdBase = process.cwd();
+    // Priorizamos la raíz del proyecto. En Vercel `cwd` puede apuntar a `public/`
+    // y hacer que `/` cargue el index equivocado.
     const candidates = [
-      path.join(cwdBase, finalRel),
       path.join(__dirname, finalRel),
+      path.join(cwdBase, finalRel),
       // fallback: si por alguna razón solo está en public/
+      path.join(__dirname, "public", finalRel),
       path.join(cwdBase, "public", finalRel),
       path.join(__dirname, "..", "public", finalRel),
     ];
