@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sala de espera — Torneos CS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="scanner-line" aria-hidden="true"></div>
+    <header class="header">
+      <div class="container header__inner">
+        <h1 class="title">Sala de espera</h1>
+        <a href="../" class="back">← Menú</a>
+      </div>
+    </header>
+
+    <main class="container main">
+      <div id="loading" class="card">Cargando sala…</div>
+
+      <div id="errorBox" class="card card--error hidden">
+        <p id="errorText"></p>
+      </div>
+
+      <section id="roomCard" class="card hidden">
+        <p id="matchMeta" class="muted"></p>
+        <div class="versus">
+          <div>
+            <p class="k">Tu equipo</p>
+            <p id="teamName" class="teamName"></p>
+          </div>
+          <div class="vs">VS</div>
+          <div>
+            <p class="k">Rival</p>
+            <p id="rivalName" class="teamName">Por definir</p>
+          </div>
+        </div>
+
+        <div class="statusRow">
+          <span class="k">Estado</span>
+          <strong id="matchStatus">Pendiente</strong>
+        </div>
+
+        <div class="statusRow">
+          <span class="k">Servidor</span>
+          <strong id="serverAddress">Sin asignar</strong>
+        </div>
+
+        <div class="actions">
+          <a id="btnConnect" href="#" class="btn btn--primary disabled" aria-disabled="true">Conectar al servidor</a>
+          <a href="../public/brackets/" class="btn">Ver llave</a>
+        </div>
+      </section>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+  </html>
+

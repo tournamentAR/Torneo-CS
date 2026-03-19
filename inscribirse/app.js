@@ -17,6 +17,7 @@
   const discord = $("discord");
   const playersList = $("playersList");
   const success = $("success");
+  const waitingRoomLink = $("waitingRoomLink");
   const wrongServerBanner = $("wrongServerBanner");
   const submitError = $("submitError");
   const submitErrorText = $("submitErrorText");
@@ -314,6 +315,9 @@
       submitError.classList.add("hidden");
       form.classList.add("hidden");
       success.classList.remove("hidden");
+      if (waitingRoomLink && json?.teamId) {
+        waitingRoomLink.href = `../sala/?tournamentId=${encodeURIComponent(tid)}&teamId=${encodeURIComponent(json.teamId)}`;
+      }
     } catch (err) {
       console.error(err);
       alert("Error de conexión. ¿Está corriendo el servidor? Ejecutá en la carpeta del proyecto: npm run dev");

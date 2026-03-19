@@ -77,6 +77,28 @@
           </label>
 
           <label class="field">
+            <span class="field__label">IP servidor CS2</span>
+            <input
+              id="tournamentConnectIp"
+              class="input"
+              type="text"
+              placeholder="Ej: 190.12.34.56"
+              maxlength="80"
+            />
+          </label>
+
+          <label class="field">
+            <span class="field__label">Puerto servidor</span>
+            <input
+              id="tournamentConnectPort"
+              class="input"
+              type="text"
+              placeholder="Ej: 27015"
+              maxlength="16"
+            />
+          </label>
+
+          <label class="field">
             <span class="field__label">Inscripción</span>
             <label class="toggle">
               <input id="tournamentIsFree" type="checkbox" checked />
@@ -150,6 +172,14 @@
                   <div class="inscriptionEditor" style="margin-left:6px">
                     <span class="muted small" style="font-family:var(--font-display); font-weight:700; letter-spacing:1px; text-transform:uppercase">Servidor</span>
                     <input id="tournamentServerEdit" class="input input--small" type="text" placeholder="Ej: Buenos Aires" minlength="2" maxlength="40" required />
+                  </div>
+                  <div class="inscriptionEditor" style="margin-left:6px">
+                    <span class="muted small" style="font-family:var(--font-display); font-weight:700; letter-spacing:1px; text-transform:uppercase">IP</span>
+                    <input id="tournamentConnectIpEdit" class="input input--small" type="text" placeholder="190.12.34.56" maxlength="80" />
+                  </div>
+                  <div class="inscriptionEditor" style="margin-left:6px">
+                    <span class="muted small" style="font-family:var(--font-display); font-weight:700; letter-spacing:1px; text-transform:uppercase">Puerto</span>
+                    <input id="tournamentConnectPortEdit" class="input input--small" type="text" placeholder="27015" maxlength="16" />
                   </div>
                 </div>
               </div>

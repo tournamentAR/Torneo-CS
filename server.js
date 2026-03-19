@@ -301,6 +301,87 @@ function handleRegister(req, res) {
 app.post("/api/register", handleRegister);
 app.post("/api/register/", handleRegister);
 
+app.get("/api/waiting-room", async (req, res) => {
+  try {
+    const tournamentId = String(req.query.tournamentId ?? "").trim();
+    const teamId = String(req.query.teamId ?? "").trim();
+    if (!tournamentId || !teamId) {
+      res.status(400).json({ ok: false, error: "Faltan tournamentId o teamId" });
+      return;
+    }
+
+    const current = USE_SUPABASE ? await getStateSupabase() : data;
+    const tournaments = Array.isArray(current?.tournaments) ? current.tournaments : [];
+    const t = tournaments.find((x) => x?.id === tournamentId);
+    if (!t) {
+      res.status(404).json({ ok: false, error: "Torneo no encontrado" });
+      return;
+    }
+
+    const teams = Array.isArray(t.teams) ? t.teams : [];
+    const own = teams.find((x) => x?.id === teamId) ?? null;
+    if (!own) {
+      res.status(404).json({ ok: false, error: "Equipo no encontrado en este torneo" });
+      return;
+    }
+
+    const rounds = Array.isArray(t?.bracket?.rounds) ? t.bracket.rounds : [];
+    const firstRound = rounds.find((r) => Number(r?.round) === 1) ?? rounds[0] ?? null;
+    const matches = Array.isArray(firstRound?.matches) ? firstRound.matches : [];
+    const match = matches.find((m) => m?.a?.teamId === teamId || m?.b?.teamId === teamId) ?? null;
+
+    const rivalTeamName = match
+      ? (match.a?.teamId === teamId ? (match.b?.teamName ?? null) : (match.a?.teamName ?? null))
+      : null;
+    const ownSide = match
+      ? (match.a?.teamId === teamId ? "a" : "b")
+      : null;
+    const winner = match?.result?.winner ?? null;
+    const status = !match
+      ? "pendiente"
+      : winner
+        ? (winner === ownSide ? "ganado" : "perdido")
+        : "listo";
+
+    const connectIp = t.connectIp ?? null;
+    const connectPort = t.connectPort ?? null;
+    const connectAddress = connectIp && connectPort ? `${connectIp}:${connectPort}` : null;
+    const connectUrl = connectAddress ? `steam://connect/${connectAddress}` : null;
+
+    res.json({
+      ok: true,
+      tournament: {
+        id: t.id,
+        name: t.name,
+        mode: t.mode,
+        platform: t.platform ?? null,
+        server: t.server ?? null,
+      },
+      team: {
+        id: own.id,
+        name: own.name,
+        players: own.players ?? [],
+        confirmed: Boolean(own.confirmed),
+      },
+      match: match
+        ? {
+            round: firstRound?.round ?? 1,
+            number: match.match ?? null,
+            rivalTeamName,
+            status,
+          }
+        : null,
+      connection: {
+        address: connectAddress,
+        connectUrl,
+      },
+    });
+  } catch (err) {
+    console.error("/api/waiting-room error:", err);
+    res.status(500).json({ ok: false, error: "Error del servidor" });
+  }
+});
+
 // ---- Static UI routes (explicit) ----
 // En Vercel, los archivos fuera de `public/` pueden no estar disponibles para
 // el resolver dinámico con fs. Para que `/admin/` y `/inscribirse/` funcionen,
@@ -319,6 +400,7 @@ function sendIfExists(filePath, res) {
 
 const ROOT_ADMIN_DIR = path.join(__dirname, "admin");
 const ROOT_INSCRIBIRSE_DIR = path.join(__dirname, "inscribirse");
+const ROOT_SALA_DIR = path.join(__dirname, "sala");
 
 function sendAdminIndex(res) {
   const ok = sendIfExists(path.join(ROOT_ADMIN_DIR, "index.html"), res);
@@ -352,6 +434,23 @@ app.get("/inscribirse/app.js", (req, res) => {
 app.get("/inscribirse/styles.css", (req, res) => {
   const ok = sendIfExists(path.join(ROOT_INSCRIBIRSE_DIR, "styles.css"), res);
   if (!ok) res.status(404).send("Cannot GET /inscribirse/styles.css");
+});
+
+function sendSalaIndex(res) {
+  const ok = sendIfExists(path.join(ROOT_SALA_DIR, "index.html"), res);
+  if (!ok) res.status(404).send("Cannot GET /sala/");
+}
+
+app.get("/sala", (req, res) => sendSalaIndex(res));
+app.get("/sala/", (req, res) => sendSalaIndex(res));
+app.get("/sala/index.html", (req, res) => sendSalaIndex(res));
+app.get("/sala/app.js", (req, res) => {
+  const ok = sendIfExists(path.join(ROOT_SALA_DIR, "app.js"), res);
+  if (!ok) res.status(404).send("Cannot GET /sala/app.js");
+});
+app.get("/sala/styles.css", (req, res) => {
+  const ok = sendIfExists(path.join(ROOT_SALA_DIR, "styles.css"), res);
+  if (!ok) res.status(404).send("Cannot GET /sala/styles.css");
 });
 
 app.get("/api/stream", (req, res) => {

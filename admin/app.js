@@ -12,7 +12,7 @@
   /** @typedef {{seed:number,teamId:string|null,teamName:string,bye:boolean,from?:{ref:MatchRef,side:"a"|"b"}}} BracketSlot */
   /** @typedef {{match:number,a:BracketSlot,b:BracketSlot,result:MatchResult}} BracketMatch */
   /** @typedef {{size:number,rounds:{round:number,title:string,matches:BracketMatch[]}[],generatedAt:number}} Bracket */
-  /** @typedef {{id:string,name:string,mode:"1v1"|"2v2"|"5v5",cap:number,createdAt:number,dateAt?:string,platform?:string,server?:string,isFree:boolean,fee?:number|null,teams:Team[],bracket?:Bracket}} Tournament */
+  /** @typedef {{id:string,name:string,mode:"1v1"|"2v2"|"5v5",cap:number,createdAt:number,dateAt?:string,platform?:string,server?:string,connectIp?:string|null,connectPort?:string|null,isFree:boolean,fee?:number|null,teams:Team[],bracket?:Bracket}} Tournament */
 
   const $ = (id) => /** @type {HTMLElement} */ (document.getElementById(id));
 
@@ -24,6 +24,8 @@
     tournamentDate: $("tournamentDate"),
     tournamentPlatform: $("tournamentPlatform"),
     tournamentServer: $("tournamentServer"),
+    tournamentConnectIp: $("tournamentConnectIp"),
+    tournamentConnectPort: $("tournamentConnectPort"),
     tournamentIsFree: $("tournamentIsFree"),
     tournamentFee: $("tournamentFee"),
     tournamentList: $("tournamentList"),
@@ -36,6 +38,8 @@
     tournamentFeeEdit: $("tournamentFeeEdit"),
     tournamentPlatformEdit: $("tournamentPlatformEdit"),
     tournamentServerEdit: $("tournamentServerEdit"),
+    tournamentConnectIpEdit: $("tournamentConnectIpEdit"),
+    tournamentConnectPortEdit: $("tournamentConnectPortEdit"),
     addTeamHeader: $("addTeamHeader"),
 
     addTeamForm: $("addTeamForm"),
@@ -86,6 +90,8 @@
         }
         if (typeof t.platform !== "string" || !t.platform.trim()) t.platform = "xplay.gg";
         if (typeof t.server !== "string" || !t.server.trim()) t.server = "Buenos Aires";
+        if (typeof t.connectIp !== "string") t.connectIp = null;
+        if (typeof t.connectPort !== "string") t.connectPort = null;
         for (const team of t.teams ?? []) {
           if (!Array.isArray(team.players)) team.players = [];
         }
@@ -291,6 +297,7 @@
         const confirmedCount = t.teams.filter((x) => x.confirmed).length;
         const totalCount = t.teams.length;
         const dateStr = t.dateAt ? formatTournamentDate(t.dateAt) : "";
+        const connectMeta = t.connectIp && t.connectPort ? `connect ${t.connectIp}:${t.connectPort}` : null;
         const meta = [
           t.mode,
           dateStr,
@@ -298,6 +305,7 @@
           `equipos ${totalCount} (confirmados ${confirmedCount})`,
           `plataforma ${t.platform ?? "xplay.gg"}`,
           `servidor ${t.server ?? "Buenos Aires"}`,
+          connectMeta,
         ]
           .filter(Boolean)
           .join(" · ");
@@ -334,7 +342,8 @@
     el.selectedTournamentTitle.textContent = t.name;
 
     const inscriptionText = t.isFree ? "inscripción gratis" : `inscripción $${t.fee ?? 0}`;
-    el.selectedTournamentMeta.textContent = `${t.mode} · ${modeToPlayers(t.mode)} jugadores por equipo · cupo ${t.cap} · creado ${formatDate(t.createdAt)} · ${inscriptionText} · ${t.platform ?? "xplay.gg"} · ${t.server ?? "Buenos Aires"}`;
+    const connectText = t.connectIp && t.connectPort ? ` · connect ${t.connectIp}:${t.connectPort}` : "";
+    el.selectedTournamentMeta.textContent = `${t.mode} · ${modeToPlayers(t.mode)} jugadores por equipo · cupo ${t.cap} · creado ${formatDate(t.createdAt)} · ${inscriptionText} · ${t.platform ?? "xplay.gg"} · ${t.server ?? "Buenos Aires"}${connectText}`;
     if (el.addTeamHeader) {
       el.addTeamHeader.textContent = t.isFree ? "Registrar equipo (gratis)" : `Registrar equipo (pago: $${t.fee ?? 0})`;
     }
@@ -352,6 +361,12 @@
     }
     if (el.tournamentServerEdit) {
       el.tournamentServerEdit.value = t.server ?? "Buenos Aires";
+    }
+    if (el.tournamentConnectIpEdit) {
+      el.tournamentConnectIpEdit.value = t.connectIp ?? "";
+    }
+    if (el.tournamentConnectPortEdit) {
+      el.tournamentConnectPortEdit.value = t.connectPort ?? "";
     }
 
     renderTeamList(t);
@@ -665,6 +680,8 @@
         createdAt: t.createdAt,
         platform: t.platform ?? "xplay.gg",
         server: t.server ?? "Buenos Aires",
+        connectIp: t.connectIp ?? null,
+        connectPort: t.connectPort ?? null,
         isFree: t.isFree ?? true,
         fee: t.fee ?? null,
         teams: t.teams.map((x) => ({
@@ -786,6 +803,8 @@
     const dateAt = (el.tournamentDate && el.tournamentDate.value) ? el.tournamentDate.value : undefined;
     const platform = (el.tournamentPlatform?.value ?? "xplay.gg").trim() || "xplay.gg";
     const server = (el.tournamentServer?.value ?? "Buenos Aires").trim() || "Buenos Aires";
+    const connectIp = (el.tournamentConnectIp?.value ?? "").trim() || null;
+    const connectPort = (el.tournamentConnectPort?.value ?? "").trim() || null;
     const isFree = Boolean(el.tournamentIsFree?.checked);
     const feeRaw = el.tournamentFee?.value ?? "";
     const feeNum = feeRaw === "" ? null : Number(feeRaw);
@@ -804,6 +823,8 @@
       dateAt: dateAt || undefined,
       platform,
       server,
+      connectIp,
+      connectPort,
       isFree,
       fee: isFree ? null : feeNum,
       teams: [],
@@ -818,6 +839,8 @@
     if (el.tournamentDate) el.tournamentDate.value = "";
     if (el.tournamentPlatform) el.tournamentPlatform.value = "xplay.gg";
     if (el.tournamentServer) el.tournamentServer.value = "Buenos Aires";
+    if (el.tournamentConnectIp) el.tournamentConnectIp.value = "";
+    if (el.tournamentConnectPort) el.tournamentConnectPort.value = "";
     if (el.tournamentIsFree) el.tournamentIsFree.checked = true;
     if (el.tournamentFee) el.tournamentFee.value = "";
     syncCreateInscriptionUI();
@@ -885,6 +908,20 @@
     const t = getSelectedTournament();
     if (!t) return;
     t.server = (el.tournamentServerEdit?.value ?? "Buenos Aires").trim() || "Buenos Aires";
+    upsertTournament(t);
+  });
+
+  el.tournamentConnectIpEdit?.addEventListener("change", () => {
+    const t = getSelectedTournament();
+    if (!t) return;
+    t.connectIp = (el.tournamentConnectIpEdit?.value ?? "").trim() || null;
+    upsertTournament(t);
+  });
+
+  el.tournamentConnectPortEdit?.addEventListener("change", () => {
+    const t = getSelectedTournament();
+    if (!t) return;
+    t.connectPort = (el.tournamentConnectPortEdit?.value ?? "").trim() || null;
     upsertTournament(t);
   });
 
@@ -1069,6 +1106,10 @@
       cap: 8,
       createdAt: now,
       dateAt: new Date(now).toISOString().slice(0, 10),
+      platform: "xplay.gg",
+      server: "Buenos Aires",
+      connectIp: null,
+      connectPort: null,
       isFree: true,
       fee: null,
       teams: [
