@@ -10,13 +10,26 @@
   const matchStatus = $("matchStatus");
   const serverAddress = $("serverAddress");
   const btnConnect = $("btnConnect");
+  const LAST_ROOM_KEY = "cs_last_waiting_room_v1";
 
   function getParams() {
     const sp = new URLSearchParams(window.location.search);
-    return {
-      tournamentId: (sp.get("tournamentId") || "").trim(),
-      teamId: (sp.get("teamId") || "").trim(),
-    };
+    let tournamentId = (sp.get("tournamentId") || "").trim();
+    let teamId = (sp.get("teamId") || "").trim();
+
+    // Si no vienen params en URL, usamos la última sala guardada.
+    if (!tournamentId || !teamId) {
+      try {
+        const raw = localStorage.getItem(LAST_ROOM_KEY);
+        if (raw) {
+          const json = JSON.parse(raw);
+          tournamentId = tournamentId || String(json?.tournamentId || "").trim();
+          teamId = teamId || String(json?.teamId || "").trim();
+        }
+      } catch {}
+    }
+
+    return { tournamentId, teamId };
   }
 
   function setError(msg) {
@@ -73,6 +86,14 @@
         btnConnect.classList.add("disabled");
         btnConnect.setAttribute("aria-disabled", "true");
       }
+
+      // Persistimos sala para volver a entrar aunque salgan al menú/juego.
+      try {
+        localStorage.setItem(
+          LAST_ROOM_KEY,
+          JSON.stringify({ tournamentId, teamId, savedAt: Date.now() })
+        );
+      } catch {}
     } catch {
       setError("Error de conexión al cargar la sala.");
     }

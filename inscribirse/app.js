@@ -18,6 +18,8 @@
   const playersList = $("playersList");
   const success = $("success");
   const waitingRoomLink = $("waitingRoomLink");
+  const resumeRoomCard = $("resumeRoomCard");
+  const resumeRoomLink = $("resumeRoomLink");
   const wrongServerBanner = $("wrongServerBanner");
   const submitError = $("submitError");
   const submitErrorText = $("submitErrorText");
@@ -28,6 +30,7 @@
   const mercContinue = $("mercRulesContinue");
 
   const DEFAULT_ORIGIN = "http://localhost:5173";
+  const LAST_ROOM_KEY = "cs_last_waiting_room_v1";
 
   function getOriginForLinks() {
     try {
@@ -38,6 +41,34 @@
 
   function getCorrectUrl() {
     return getOriginForLinks() + "/inscribirse/";
+  }
+
+  function buildRoomUrl(tournamentId, teamId) {
+    return `../sala/?tournamentId=${encodeURIComponent(tournamentId)}&teamId=${encodeURIComponent(teamId)}`;
+  }
+
+  function saveLastRoom(tournamentId, teamId) {
+    try {
+      localStorage.setItem(
+        LAST_ROOM_KEY,
+        JSON.stringify({ tournamentId, teamId, savedAt: Date.now() })
+      );
+    } catch {}
+  }
+
+  function loadLastRoom() {
+    try {
+      const raw = localStorage.getItem(LAST_ROOM_KEY);
+      if (!raw) return null;
+      const json = JSON.parse(raw);
+      if (!json || typeof json !== "object") return null;
+      const tournamentId = String(json.tournamentId || "").trim();
+      const teamId = String(json.teamId || "").trim();
+      if (!tournamentId || !teamId) return null;
+      return { tournamentId, teamId };
+    } catch {
+      return null;
+    }
   }
 
   function hasMercAccepted() {
@@ -217,6 +248,12 @@
   }
 
   async function load() {
+    const lastRoom = loadLastRoom();
+    if (lastRoom && resumeRoomCard && resumeRoomLink) {
+      resumeRoomLink.href = buildRoomUrl(lastRoom.tournamentId, lastRoom.teamId);
+      resumeRoomCard.classList.remove("hidden");
+    }
+
     if (window.location.protocol === "file:") {
       const correctUrl = getCorrectUrl();
       loading.innerHTML = "Abrí esta página desde el servidor: <a href=\"" + correctUrl + "\" style=\"color:#ffb03a\">" + correctUrl + "</a> (ejecutá <code>npm run dev</code> antes).";
@@ -316,7 +353,13 @@
       form.classList.add("hidden");
       success.classList.remove("hidden");
       if (waitingRoomLink && json?.teamId) {
-        waitingRoomLink.href = `../sala/?tournamentId=${encodeURIComponent(tid)}&teamId=${encodeURIComponent(json.teamId)}`;
+        const roomUrl = buildRoomUrl(tid, json.teamId);
+        waitingRoomLink.href = roomUrl;
+        if (resumeRoomCard && resumeRoomLink) {
+          resumeRoomLink.href = roomUrl;
+          resumeRoomCard.classList.remove("hidden");
+        }
+        saveLastRoom(tid, json.teamId);
       }
     } catch (err) {
       console.error(err);
