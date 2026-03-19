@@ -148,17 +148,26 @@ app.use((req, res) => {
     const relativePath = reqPath.replace(/^\/+/, "");
     const wanted = relativePath === "" ? "index.html" : relativePath;
     const finalRel = wanted.endsWith("/") ? `${wanted}index.html` : wanted;
-    const filePath = path.join(__dirname, finalRel);
 
-    // Seguridad básica anti traversal
-    if (!filePath.startsWith(__dirname)) {
-      res.status(400).send("Bad request");
-      return;
-    }
+    // En Vercel, __dirname puede no contener los archivos del proyecto.
+    // Usamos process.cwd() como "base" real del runtime.
+    const cwdBase = process.cwd();
+    const candidates = [
+      path.join(cwdBase, finalRel),
+      path.join(__dirname, finalRel),
+      // fallback: si por alguna razón solo está en public/
+      path.join(cwdBase, "public", finalRel),
+      path.join(__dirname, "..", "public", finalRel),
+    ];
 
-    if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
-      res.sendFile(filePath);
-      return;
+    // Seguridad anti traversal: el candidato debe estar dentro de una de las bases esperadas.
+    for (const filePath of candidates) {
+      const safeBases = [cwdBase, __dirname, path.join(__dirname, ".."), path.join(cwdBase, "public")];
+      if (!safeBases.some((b) => filePath.startsWith(b))) continue;
+      if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+        res.sendFile(filePath);
+        return;
+      }
     }
 
     res.status(404).send(`Cannot GET ${reqPath}`);
