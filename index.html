@@ -1,0 +1,749 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Torneos CS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@400;500;600;700&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet" />
+    <style>
+      /* Tactical Command Interface — CS2 Game UI */
+      :root {
+        --bg-deep: #060608;
+        --text: #e8eefc;
+        --muted: #9aa9c7;
+        --gold: #ffb800;
+        --gold-soft: rgba(255, 184, 0, 0.45);
+        --cyan: #00d4ff;
+        --cyan-soft: rgba(0, 212, 255, 0.35);
+        --tactical-green: #00e676;
+        --tactical-green-soft: rgba(0, 230, 118, 0.4);
+        --font-display: 'Orbitron', sans-serif;
+        --font-body: 'Rajdhani', sans-serif;
+      }
+      * { box-sizing: border-box; }
+      html, body { height: 100%; margin: 0; }
+      body {
+        font-family: var(--font-body);
+        font-weight: 500;
+        color: var(--text);
+        background-color: var(--bg-deep);
+        background-image:
+          linear-gradient(rgba(0, 80, 120, 0.04) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0, 80, 120, 0.04) 1px, transparent 1px);
+        background-size: 28px 28px;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 24px 18px;
+        position: relative;
+      }
+
+      /* Escaneo de datos — línea cian suave */
+      .scanner-line {
+        position: fixed;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+        opacity: 0.35;
+        pointer-events: none;
+        z-index: 9999;
+        animation: scanner-sweep 5s linear infinite;
+      }
+      @keyframes scanner-sweep {
+        0% { top: 0; }
+        100% { top: 100vh; }
+      }
+
+      .wrap {
+        max-width: 520px;
+        width: 100%;
+        text-align: center;
+        position: relative;
+        z-index: 1;
+      }
+
+      .logo {
+        font-family: var(--font-display);
+        font-size: clamp(28px, 5vw, 36px);
+        font-weight: 800;
+        letter-spacing: 2px;
+        margin: 0 0 8px;
+        text-transform: uppercase;
+        background: linear-gradient(135deg, #ffd36a, var(--gold));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        filter: drop-shadow(0 0 20px var(--gold-soft));
+      }
+      .tagline {
+        font-family: var(--font-body);
+        color: var(--muted);
+        font-size: 15px;
+        margin: 0 0 32px;
+        line-height: 1.45;
+      }
+
+      .cards {
+        display: grid;
+        gap: 16px;
+        margin-bottom: 28px;
+      }
+
+      /* Contenedores: 12px táctico + glassmorphism + glow (borde 1px + sombra de color) */
+      .card {
+        --mouse-x: 50%;
+        --mouse-y: 50%;
+        position: relative;
+        display: block;
+        text-align: left;
+        padding: 18px 20px;
+        background: rgba(15, 15, 20, 0.7);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 12px;
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.75), 0 0 12px rgba(255, 184, 0, 0.2);
+        text-decoration: none;
+        color: inherit;
+        overflow: hidden;
+        opacity: 0;
+        transform: translateY(24px);
+        animation: card-enter 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+      }
+      .card:nth-child(1) { animation-delay: 0.12s; }
+      .card:nth-child(2) { animation-delay: 0.28s; }
+      .card:nth-child(3) { animation-delay: 0.44s; }
+
+      @keyframes card-enter {
+        0% {
+          opacity: 0;
+          transform: translateY(24px);
+          filter: brightness(0.95);
+        }
+        45% {
+          opacity: 1;
+          filter: brightness(1.08);
+        }
+        50% {
+          filter: brightness(0.98);
+        }
+        55% {
+          filter: brightness(1.02);
+        }
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+          filter: brightness(1);
+        }
+      }
+
+      .card:hover {
+        transform: translateY(-5px) scale(1.02);
+        box-shadow: 0 16px 48px 0 rgba(0, 0, 0, 0.8), 0 0 28px rgba(255, 184, 0, 0.4);
+        border-color: rgba(255, 184, 0, 0.25);
+      }
+
+      /* Spotlight que sigue al cursor (linterna) */
+      .card__spotlight {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        border-radius: inherit;
+        opacity: 0;
+        transition: opacity 0.25s ease;
+      }
+      .card:hover .card__spotlight { opacity: 1; }
+      .card--organizer .card__spotlight {
+        background: radial-gradient(
+          420px circle at var(--mouse-x) var(--mouse-y),
+          rgba(255, 184, 0, 0.12),
+          transparent 45%
+        );
+      }
+      .card--public .card__spotlight {
+        background: radial-gradient(
+          420px circle at var(--mouse-x) var(--mouse-y),
+          rgba(0, 212, 255, 0.1),
+          transparent 45%
+        );
+      }
+      .card--players .card__spotlight {
+        background: radial-gradient(
+          420px circle at var(--mouse-x) var(--mouse-y),
+          rgba(0, 230, 118, 0.1),
+          transparent 45%
+        );
+      }
+
+      .card__content { position: relative; z-index: 1; }
+
+      /* ORGANIZADOR — dorado */
+      .card--organizer {
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.75), 0 0 12px var(--gold-soft);
+        border-color: rgba(255, 184, 0, 0.12);
+      }
+      .card--organizer:hover {
+        box-shadow: 0 16px 48px 0 rgba(0, 0, 0, 0.8), 0 0 28px var(--gold-soft), 0 0 40px rgba(255, 184, 0, 0.15);
+        border-color: rgba(255, 184, 0, 0.4);
+      }
+      .card--organizer .card__label { color: var(--gold); }
+      .card--organizer .card__icon { color: var(--gold); }
+
+      /* PÚBLICO — cian */
+      .card--public {
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.75), 0 0 12px var(--cyan-soft);
+        border-color: rgba(0, 212, 255, 0.1);
+      }
+      .card--public:hover {
+        box-shadow: 0 16px 48px 0 rgba(0, 0, 0, 0.8), 0 0 28px var(--cyan-soft), 0 0 40px rgba(0, 212, 255, 0.12);
+        border-color: rgba(0, 212, 255, 0.35);
+      }
+      .card--public .card__label { color: var(--cyan); }
+      .card--public .card__icon { color: var(--cyan); }
+
+      /* JUGADORES — verde táctico */
+      .card--players {
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.75), 0 0 12px var(--tactical-green-soft);
+        border-color: rgba(0, 230, 118, 0.1);
+      }
+      .card--players:hover {
+        box-shadow: 0 16px 48px 0 rgba(0, 0, 0, 0.8), 0 0 28px var(--tactical-green-soft), 0 0 40px rgba(0, 230, 118, 0.12);
+        border-color: rgba(0, 230, 118, 0.35);
+      }
+      .card--players .card__label { color: var(--tactical-green); }
+      .card--players .card__icon { color: var(--tactical-green); }
+
+      .card__label {
+        font-family: var(--font-display);
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        margin-bottom: 6px;
+      }
+      .card__title-wrap {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 4px;
+      }
+      .card__icon {
+        flex-shrink: 0;
+        width: 22px;
+        height: 22px;
+        stroke-width: 1.75;
+      }
+      .card__icon svg {
+        width: 100%;
+        height: 100%;
+        stroke: currentColor;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .card__title {
+        font-family: 'Oswald', var(--font-display);
+        font-size: 17px;
+        font-weight: 600;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        margin: 0;
+      }
+      .card__desc {
+        font-family: var(--font-body);
+        font-size: 13px;
+        color: var(--muted);
+        margin: 0;
+        line-height: 1.4;
+      }
+
+      .foot {
+        font-family: var(--font-body);
+        font-size: 13px;
+        color: var(--muted);
+        line-height: 1.5;
+        max-width: 42ch;
+        margin: 0 auto;
+      }
+      .foot strong { color: var(--text); }
+
+      .hidden { display: none !important; }
+
+      /* Modal — Contrato de Mercenarios (Reglas de Enganche) */
+      .mercModal {
+        position: fixed;
+        inset: 0;
+        z-index: 99999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 18px;
+      }
+
+      .mercModal__backdrop {
+        position: absolute;
+        inset: 0;
+        background: rgba(10, 10, 10, 0.9);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+      }
+
+      .mercModal__panel {
+        position: relative;
+        width: min(720px, 100%);
+        padding: 22px 18px 18px;
+        border-radius: 16px;
+        border: 1px solid transparent;
+
+        background-image:
+          linear-gradient(rgba(10, 10, 10, 0.92), rgba(10, 10, 10, 0.92)),
+          linear-gradient(135deg, rgba(0, 230, 118, 0.95), rgba(255, 184, 0, 0.85), rgba(0, 200, 255, 0.9));
+        background-origin: border-box;
+        background-clip: padding-box, border-box;
+        background-size: 100% 100%, 260% 260%;
+        background-position: 0 0, 0% 50%;
+
+        animation:
+          mercZoomIn 0.18s ease-out both,
+          mercBorderSweep 3.6s ease-in-out infinite both,
+          mercBlink 2.4s ease-in-out infinite both;
+        box-shadow:
+          0 0 0 1px rgba(255, 184, 0, 0.14),
+          0 20px 60px rgba(0, 0, 0, 0.7);
+      }
+
+      @keyframes mercZoomIn {
+        from { transform: scale(0.94); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+      }
+
+      @keyframes mercBorderSweep {
+        0% { background-position: 0 0, 0% 50%; }
+        50% { background-position: 0 0, 100% 50%; }
+        100% { background-position: 0 0, 0% 50%; }
+      }
+
+      @keyframes mercBlink {
+        0%, 100% { filter: brightness(1); box-shadow: 0 0 0 1px rgba(255, 184, 0, 0.14), 0 20px 60px rgba(0, 0, 0, 0.7); }
+        50% { filter: brightness(1.06); box-shadow: 0 0 0 1px rgba(255, 184, 0, 0.28), 0 0 26px rgba(0, 200, 255, 0.18), 0 20px 60px rgba(0, 0, 0, 0.7); }
+      }
+
+      .mercModal__panel::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        pointer-events: none;
+        background: repeating-linear-gradient(
+          to bottom,
+          rgba(0, 200, 255, 0.12) 0px,
+          rgba(0, 200, 255, 0.12) 1px,
+          transparent 2px,
+          transparent 6px
+        );
+        opacity: 0.2;
+        mix-blend-mode: screen;
+        animation: mercScan 2.8s linear infinite;
+      }
+
+      @keyframes mercScan {
+        from { transform: translateY(-10%); }
+        to { transform: translateY(10%); }
+      }
+
+      .mercModal__title {
+        margin: 0 0 10px;
+        font-family: var(--font-display);
+        font-size: 16px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+      }
+
+      .mercRules__divider {
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(0, 200, 255, 0.6), transparent);
+        margin: 12px 0 10px;
+      }
+
+      .mercRulesList {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: grid;
+        gap: 10px;
+      }
+
+      .mercRulesList li {
+        padding: 12px 12px;
+        border-radius: 12px;
+        background: rgba(0, 0, 0, 0.25);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        position: relative;
+      }
+
+      .mercRulesList__k {
+        font-family: var(--font-display);
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: rgba(255, 184, 0, 0.95);
+        margin-bottom: 6px;
+      }
+
+      .mercRulesList__v {
+        font-family: var(--font-body);
+        font-size: 13px;
+        color: rgba(232, 238, 252, 0.95);
+        line-height: 1.45;
+      }
+
+      .mercLatency {
+        margin-top: 14px;
+      }
+
+      .mercLatencyTitle {
+        margin: 0 0 10px;
+        font-family: var(--font-display);
+        font-size: 12px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: rgba(0, 200, 255, 0.9);
+      }
+
+      .mercLatencyList {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: grid;
+        gap: 10px;
+      }
+
+      .mercLatencyItem {
+        padding: 12px 12px;
+        border-radius: 12px;
+        background: rgba(0, 0, 0, 0.18);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.15s ease, filter 0.15s ease;
+      }
+
+      .mercLatencyItem__top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 6px;
+      }
+
+      .mercLatencyItem__rank {
+        font-family: var(--font-display);
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: rgba(232, 238, 252, 0.92);
+      }
+
+      .mercLatencyCountry {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        font-size: 13px;
+        color: rgba(232, 238, 252, 0.98);
+        line-height: 1.35;
+        cursor: default;
+        text-shadow: 0 0 0 rgba(0, 0, 0, 0);
+      }
+
+      .mercLatencyCountry:hover {
+        filter: brightness(1.1);
+        text-shadow: 0 0 14px rgba(0, 200, 255, 0.25);
+      }
+
+      .mercSignal {
+        display: inline-flex;
+        gap: 3px;
+        align-items: flex-end;
+        height: 18px;
+        width: 28px;
+      }
+
+      .mercSignal span {
+        display: inline-block;
+        width: 5px;
+        border-radius: 3px;
+        background: rgba(255, 184, 0, 0.55);
+        box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+      }
+
+      .mercSignal span:nth-child(1) { height: 6px; }
+      .mercSignal span:nth-child(2) { height: 9px; }
+      .mercSignal span:nth-child(3) { height: 13px; }
+      .mercSignal span:nth-child(4) { height: 18px; }
+
+      .mercSignal--green span { background: rgba(0, 230, 118, 0.75); }
+      .mercSignal--yellow span { background: rgba(255, 184, 0, 0.72); }
+
+      .mercLatencyItem:hover {
+        border-color: rgba(0, 200, 255, 0.35);
+        box-shadow: 0 0 18px rgba(0, 200, 255, 0.18);
+        transform: translateY(-1px);
+      }
+
+      .mercLatencyItem:hover .mercLatencyCountry:hover {
+        text-shadow: 0 0 18px rgba(0, 200, 255, 0.35);
+      }
+
+      .mercLatencyNote {
+        margin: 10px 0 0;
+        font-family: var(--font-body);
+        font-size: 12px;
+        color: rgba(154, 169, 199, 0.95);
+        line-height: 1.45;
+      }
+
+      .mercAgree {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        margin-top: 14px;
+        font-family: var(--font-body);
+        color: rgba(232, 238, 252, 0.95);
+        line-height: 1.35;
+        user-select: none;
+      }
+
+      .mercAgree input {
+        margin-top: 3px;
+        width: 18px;
+        height: 18px;
+        accent-color: #00e676;
+      }
+
+      .mercActions { margin-top: 16px; }
+
+      .mercContinue {
+        width: 100%;
+        border: 1px solid rgba(0, 200, 255, 0.45);
+        border-radius: 12px;
+        padding: 12px 16px;
+        background: linear-gradient(135deg, #00C8FF, #0077FF);
+        color: #041018;
+        font-family: var(--font-display);
+        font-weight: 800;
+        font-size: 14px;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        cursor: not-allowed;
+
+        clip-path: polygon(10px 0, 0 10px, 0 calc(100% - 10px), 10px 100%, calc(100% - 10px) 100%, 100% calc(100% - 10px), 100% 10px, calc(100% - 10px) 0);
+
+        opacity: 0.55;
+        box-shadow: none;
+        transition: opacity 0.15s ease, box-shadow 0.2s ease, transform 0.15s ease, filter 0.2s ease;
+      }
+
+      .mercContinue.is-enabled {
+        cursor: pointer;
+        opacity: 1;
+        transform: translateY(-1px);
+        filter: brightness(1.08);
+        box-shadow: 0 0 18px rgba(0, 200, 255, 0.35), 0 0 34px rgba(0, 119, 255, 0.22);
+      }
+
+      .mercContinue:not([disabled]).is-enabled:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 0 26px rgba(0, 200, 255, 0.48), 0 0 44px rgba(0, 119, 255, 0.28);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="scanner-line" aria-hidden="true"></div>
+    <div class="wrap">
+      <h1 class="logo">Torneos CS</h1>
+      <p class="tagline">Creá torneos, inscribí equipos y mostrá llaves en vivo.</p>
+
+      <nav class="cards">
+        <a href="./admin/" class="card card--primary card--organizer">
+          <span class="card__spotlight" aria-hidden="true"></span>
+          <div class="card__content">
+            <span class="card__label">Organizador</span>
+            <div class="card__title-wrap">
+              <span class="card__icon" aria-hidden="true"><svg viewBox="0 0 24 24" stroke-width="1.75"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+              <h2 class="card__title">Panel privado</h2>
+            </div>
+            <p class="card__desc">Crear torneos (fecha, modalidad, cupo), confirmar equipos y cargar resultados.</p>
+          </div>
+        </a>
+        <a href="./public/" class="card card--public">
+          <span class="card__spotlight" aria-hidden="true"></span>
+          <div class="card__content">
+            <span class="card__label">Público</span>
+            <div class="card__title-wrap">
+              <span class="card__icon" aria-hidden="true"><svg viewBox="0 0 24 24" stroke-width="1.75"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg></span>
+              <h2 class="card__title">Ver equipos, llaves y resultados</h2>
+            </div>
+            <p class="card__desc">Vista solo lectura: equipos confirmados, bracket y ganador.</p>
+          </div>
+        </a>
+        <a href="./inscribirse/" class="card card--players" id="ctaInscribirse">
+          <span class="card__spotlight" aria-hidden="true"></span>
+          <div class="card__content">
+            <span class="card__label">Jugadores</span>
+            <div class="card__title-wrap">
+              <span class="card__icon" aria-hidden="true"><svg viewBox="0 0 24 24" stroke-width="1.75"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+              <h2 class="card__title">Inscribir equipo</h2>
+            </div>
+            <p class="card__desc">Anotate con tu equipo y jugadores; el organizador confirma para la llave.</p>
+          </div>
+        </a>
+      </nav>
+
+      <p class="foot">
+        Los torneos se crean en el <strong>panel</strong>. Los equipos se anotan en <strong>Inscribir equipo</strong>; el organizador confirma y publica.
+      </p>
+    </div>
+    <script>
+      document.querySelectorAll('.card').forEach(function (card) {
+        card.addEventListener('mousemove', function (e) {
+          var rect = card.getBoundingClientRect();
+          var x = ((e.clientX - rect.left) / rect.width) * 100;
+          var y = ((e.clientY - rect.top) / rect.height) * 100;
+          card.style.setProperty('--mouse-x', x + '%');
+          card.style.setProperty('--mouse-y', y + '%');
+        });
+      });
+
+      window.addEventListener("DOMContentLoaded", function () {
+        (function () {
+          var STORAGE_KEY = "mercRulesAccepted_v1";
+          var cta = document.getElementById("ctaInscribirse");
+          if (!cta) return;
+
+          var modal = document.getElementById("mercRulesModal");
+          var checkbox = document.getElementById("mercRulesAgree");
+          var continueBtn = document.getElementById("mercRulesContinue");
+          if (!modal || !checkbox || !continueBtn) return;
+
+          function hasAccepted() {
+            try {
+              return localStorage.getItem(STORAGE_KEY) === "1";
+            } catch (e) {
+              return false;
+            }
+          }
+
+          function openModal() {
+            checkbox.checked = false;
+            continueBtn.disabled = true;
+            continueBtn.classList.remove("is-enabled");
+            modal.classList.remove("hidden");
+            modal.setAttribute("aria-hidden", "false");
+          }
+
+          function enableContinueIfAllowed() {
+            var ok = checkbox.checked === true;
+            continueBtn.disabled = !ok;
+            continueBtn.classList.toggle("is-enabled", ok);
+          }
+
+          checkbox.addEventListener("change", enableContinueIfAllowed);
+
+          continueBtn.addEventListener("click", function () {
+            try {
+              localStorage.setItem(STORAGE_KEY, "1");
+            } catch (e) {}
+            modal.classList.add("hidden");
+            modal.setAttribute("aria-hidden", "true");
+            window.location.href = cta.getAttribute("href") || "./inscribirse/";
+          });
+
+          cta.addEventListener("click", function (e) {
+            if (hasAccepted()) return;
+            e.preventDefault();
+            openModal();
+          });
+
+          // Si el usuario acepta y vuelve atrás, no interrumpimos.
+          if (hasAccepted()) {
+            modal.classList.add("hidden");
+            modal.setAttribute("aria-hidden", "true");
+          }
+        })();
+      });
+    </script>
+
+    <div id="mercRulesModal" class="mercModal hidden" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="mercRulesTitle">
+      <div class="mercModal__backdrop" aria-hidden="true"></div>
+      <div class="mercModal__panel">
+        <h2 id="mercRulesTitle" class="mercModal__title">Contrato de Mercenarios — Reglas de Enganche (CS2)</h2>
+
+        <div class="mercRules__divider" aria-hidden="true"></div>
+
+        <ul class="mercRulesList">
+          <li>
+            <div class="mercRulesList__k">PROHIBIDO EL USO DE CHEATS</div>
+            <div class="mercRulesList__v">El uso de software de terceros o trampas resultará en baneo permanente del equipo.</div>
+          </li>
+          <li>
+            <div class="mercRulesList__k">SISTEMA DE LLAVES</div>
+            <div class="mercRulesList__v">Los cruces se generarán de forma aleatoria y automática por el sistema.</div>
+          </li>
+          <li>
+            <div class="mercRulesList__k">PLATAFORMA</div>
+            <div class="mercRulesList__v">Todos los partidos se disputarán obligatoriamente en servidores de <strong>xplay.gg</strong>.</div>
+          </li>
+        </ul>
+
+        <div class="mercLatency">
+          <h3 class="mercLatencyTitle">PROTOCOLO DE LATENCIA (LATAM)</h3>
+          <ul class="mercLatencyList">
+            <li class="mercLatencyItem">
+              <div class="mercLatencyItem__top">
+                <div class="mercLatencyItem__rank">PRIORIDAD 1</div>
+                <div class="mercSignal mercSignal--green" aria-hidden="true">
+                  <span></span><span></span><span></span><span></span>
+                </div>
+              </div>
+              <div class="mercLatencyCountry">🇦🇷 Buenos Aires (Local Host - Default).</div>
+            </li>
+            <li class="mercLatencyItem">
+              <div class="mercLatencyItem__top">
+                <div class="mercLatencyItem__rank">PRIORIDAD 2</div>
+                <div class="mercSignal mercSignal--yellow" aria-hidden="true">
+                  <span></span><span></span><span></span><span></span>
+                </div>
+              </div>
+              <div class="mercLatencyCountry">🇨🇱 Santiago de Chile (Backup A).</div>
+            </li>
+            <li class="mercLatencyItem">
+              <div class="mercLatencyItem__top">
+                <div class="mercLatencyItem__rank">PRIORIDAD 3</div>
+                <div class="mercSignal mercSignal--yellow" aria-hidden="true">
+                  <span></span><span></span><span></span><span></span>
+                </div>
+              </div>
+              <div class="mercLatencyCountry">🇧🇷 São Paulo (Backup B).</div>
+            </li>
+          </ul>
+          <p class="mercLatencyNote">La administración decidirá el cambio de región basándose en la estabilidad de xplay.gg al momento del match.</p>
+        </div>
+
+        <label class="mercAgree" for="mercRulesAgree">
+          <input id="mercRulesAgree" type="checkbox" />
+          <span>Acepto las Reglas de Enganche y confirmo mi participación</span>
+        </label>
+
+        <div class="mercActions">
+          <button id="mercRulesContinue" class="mercContinue" type="button" disabled>
+            Continuar a Inscripción
+          </button>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

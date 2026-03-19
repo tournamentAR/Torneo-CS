@@ -1,0 +1,10 @@
+﻿node_modules/
+dist/
+build/
+coverage/
+.env
+.env.*
+data-store.json
+*.log
+.vscode/
+.idea/

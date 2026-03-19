@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Inscribirse — Torneos CS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="scanner-line" aria-hidden="true"></div>
+    <header class="header">
+      <div class="container header__inner">
+        <h1 class="title">Inscribir equipo</h1>
+        <p class="subtitle">Elegí un torneo y cargá nombre del equipo y jugadores. <em>Para que guarde, abrí desde <strong>http://localhost:5173/inscribirse/</strong> (ejecutá <code>npm run dev</code> antes).</em></p>
+        <a href="../" class="back">← Volver</a>
+      </div>
+    </header>
+
+    <main class="container main">
+      <div id="wrongServerBanner" class="card card--warn hidden">
+        <p><strong>Esta página no está en el servidor del proyecto.</strong> Para que la inscripción se guarde, abrila desde el servidor correcto.</p>
+        <a id="openCorrectUrl" href="http://localhost:5173/inscribirse/" class="btn btn--primary">Abrir en el servidor correcto (localhost:5173)</a>
+      </div>
+      <div id="submitError" class="card card--error hidden">
+        <p id="submitErrorText"></p>
+        <a id="submitErrorLink" href="http://localhost:5173/inscribirse/" class="btn">Abrir en el servidor correcto</a>
+      </div>
+      <div id="loading" class="card">Cargando torneos…</div>
+      <div id="noTournaments" class="card hidden">
+        <p>No hay torneos abiertos para inscribirse. Creá uno desde el panel de admin.</p>
+      </div>
+
+      <form id="formInscripcion" class="card hidden">
+        <h2 class="card__title">Datos del equipo</h2>
+
+        <label class="field">
+          <span class="field__label">Torneo</span>
+          <select id="selectTorneo" class="input" required></select>
+          <div id="torneoDetalle" class="torneoDetalle hidden" aria-live="polite">
+            <div class="torneoDetalle__row"><span class="torneoDetalle__k">Torneo</span> <span id="torneoNombreDisp"></span></div>
+            <div class="torneoDetalle__row"><span class="torneoDetalle__k">Inscripción</span> <span id="torneoPrecioDisp"></span></div>
+            <div class="torneoDetalle__row"><span class="torneoDetalle__k">Plataforma</span> <span id="torneoPlataformaDisp"></span></div>
+            <div class="torneoDetalle__row"><span class="torneoDetalle__k">Servidor</span> <span id="torneoServidorDisp"></span></div>
+          </div>
+          <span id="torneoMeta" class="field__hint"></span>
+        </label>
+
+        <label class="field">
+          <span class="field__label">Nombre del equipo</span>
+          <input id="teamName" class="input" type="text" placeholder="Ej: AWP Kings" minlength="2" maxlength="60" required />
+        </label>
+
+        <label class="field">
+          <span class="field__label">Número del representante</span>
+          <input id="repNumber" class="input" type="text" placeholder="Ej: +54 11 5555-5555" maxlength="40" />
+          <span class="field__hint">Opcional (para que te contacten).</span>
+        </label>
+
+        <label class="field">
+          <span class="field__label">Discord</span>
+          <input id="discord" class="input" type="text" placeholder="Ej: nick#1234 o @nick" maxlength="60" />
+          <span class="field__hint">Opcional (para coordinar).</span>
+        </label>
+
+        <div id="playersWrap">
+          <span class="field__label">Jugadores</span>
+          <div id="playersList" class="playersList"></div>
+        </div>
+
+        <div class="form__actions">
+          <button class="btn btn--primary" type="submit">Enviar inscripción</button>
+        </div>
+      </form>
+
+      <div id="success" class="card card--success hidden">
+        <h2>Inscripción enviada</h2>
+        <p>Tu equipo quedó anotado. El organizador debe confirmarlo para que aparezca en la llave.</p>
+        <a href="../public/" class="btn">Ver torneos y llaves</a>
+      </div>
+    </main>
+
+    <!-- Modal — Contrato de Mercenarios (Reglas de Enganche) -->
+    <div id="mercRulesModal" class="mercModal hidden" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="mercRulesTitle">
+      <div class="mercModal__backdrop" aria-hidden="true"></div>
+      <div class="mercModal__panel">
+        <h2 id="mercRulesTitle" class="mercModal__title">Contrato de Mercenarios — Reglas de Enganche (CS2)</h2>
+
+        <div class="mercRules__divider" aria-hidden="true"></div>
+
+        <ul class="mercRulesList">
+          <li>
+            <div class="mercRulesList__k">PROHIBIDO EL USO DE CHEATS</div>
+            <div class="mercRulesList__v">El uso de software de terceros o trampas resultará en baneo permanente del equipo.</div>
+          </li>
+          <li>
+            <div class="mercRulesList__k">SISTEMA DE LLAVES</div>
+            <div class="mercRulesList__v">Los cruces se generarán de forma aleatoria y automática por el sistema.</div>
+          </li>
+          <li>
+            <div class="mercRulesList__k">PLATAFORMA</div>
+            <div class="mercRulesList__v">Todos los partidos se disputarán obligatoriamente en servidores de <strong>xplay.gg</strong>.</div>
+          </li>
+        </ul>
+
+        <div class="mercLatency">
+          <h3 class="mercLatencyTitle">PROTOCOLO DE LATENCIA (LATAM)</h3>
+          <ul class="mercLatencyList">
+            <li class="mercLatencyItem">
+              <div class="mercLatencyItem__top">
+                <div class="mercLatencyItem__rank">PRIORIDAD 1</div>
+                <div class="mercSignal mercSignal--green" aria-hidden="true">
+                  <span></span><span></span><span></span><span></span>
+                </div>
+              </div>
+              <div class="mercLatencyCountry">🇦🇷 Buenos Aires (Local Host - Default).</div>
+            </li>
+            <li class="mercLatencyItem">
+              <div class="mercLatencyItem__top">
+                <div class="mercLatencyItem__rank">PRIORIDAD 2</div>
+                <div class="mercSignal mercSignal--yellow" aria-hidden="true">
+                  <span></span><span></span><span></span><span></span>
+                </div>
+              </div>
+              <div class="mercLatencyCountry">🇨🇱 Santiago de Chile (Backup A).</div>
+            </li>
+            <li class="mercLatencyItem">
+              <div class="mercLatencyItem__top">
+                <div class="mercLatencyItem__rank">PRIORIDAD 3</div>
+                <div class="mercSignal mercSignal--yellow" aria-hidden="true">
+                  <span></span><span></span><span></span><span></span>
+                </div>
+              </div>
+              <div class="mercLatencyCountry">🇧🇷 São Paulo (Backup B).</div>
+            </li>
+          </ul>
+          <p class="mercLatencyNote">La administración decidirá el cambio de región basándose en la estabilidad de xplay.gg al momento del match.</p>
+        </div>
+
+        <label class="mercAgree" for="mercRulesAgree">
+          <input id="mercRulesAgree" type="checkbox" />
+          <span>Acepto las Reglas de Enganche y confirmo mi participación</span>
+        </label>
+
+        <div class="mercActions">
+          <button id="mercRulesContinue" class="mercContinue" type="button" disabled>
+            Continuar a Inscripción
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

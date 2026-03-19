@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Panel privado — Torneos CS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="scanner-line" aria-hidden="true"></div>
+    <header class="header">
+      <div class="container header__inner">
+        <div>
+          <h1 class="title">Panel privado</h1>
+          <p class="subtitle">Crea torneos, confirma equipos, carga resultados y publica en vivo para la web pública.</p>
+        </div>
+        <div class="header__actions">
+          <button id="btnExportPublic" class="btn btn--primary" type="button">Publicar al público</button>
+          <button id="btnSeedDemo" class="btn btn--ghost" type="button">Cargar demo</button>
+          <button id="btnReset" class="btn btn--danger" type="button">Borrar todo</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="container layout">
+      <section class="card">
+        <div class="card__header">
+          <h2 class="card__title">Crear torneo</h2>
+          <p class="card__hint">Configuración de inscripción.</p>
+        </div>
+
+        <form id="createTournamentForm" class="form">
+          <label class="field">
+            <span class="field__label">Nombre</span>
+            <input id="tournamentName" class="input" placeholder="Ej: Torneo 1" minlength="2" maxlength="40" required />
+          </label>
+
+          <label class="field">
+            <span class="field__label">Modalidad</span>
+            <select id="tournamentMode" class="input" required>
+              <option value="1v1">1v1</option>
+              <option value="2v2">2v2</option>
+              <option value="5v5" selected>5v5</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span class="field__label">Fecha del torneo</span>
+            <input id="tournamentDate" class="input" type="date" required />
+          </label>
+
+          <label class="field">
+            <span class="field__label">Plataforma</span>
+            <select id="tournamentPlatform" class="input" required>
+              <option value="xplay.gg" selected>xplay.gg</option>
+              <option value="FACEIT">FACEIT</option>
+              <option value="ESEA">ESEA</option>
+              <option value="ESL">ESL</option>
+              <option value="Otro">Otro</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span class="field__label">Servidor (Ciudad)</span>
+            <input
+              id="tournamentServer"
+              class="input"
+              type="text"
+              placeholder="Ej: Buenos Aires"
+              minlength="2"
+              maxlength="40"
+              required
+            />
+          </label>
+
+          <label class="field">
+            <span class="field__label">Inscripción</span>
+            <label class="toggle">
+              <input id="tournamentIsFree" type="checkbox" checked />
+              <span>Gratis</span>
+            </label>
+          </label>
+
+          <label class="field">
+            <span class="field__label">Costo del torneo</span>
+            <input id="tournamentFee" class="input" type="number" min="0" step="1" placeholder="Ej: 1000" disabled />
+          </label>
+
+          <label class="field">
+            <span class="field__label">Cupo de equipos</span>
+            <select id="tournamentCap" class="input" required>
+              <option value="4">4</option>
+              <option value="8" selected>8</option>
+              <option value="16">16</option>
+              <option value="32">32</option>
+            </select>
+          </label>
+
+          <div class="form__actions">
+            <button class="btn btn--primary" type="submit">Crear torneo</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="card">
+        <div class="card__header">
+          <h2 class="card__title">Torneos</h2>
+          <p class="card__hint">Elige un torneo para gestionar equipos, llave y resultados.</p>
+        </div>
+
+        <div class="split">
+          <div>
+            <div id="tournamentList" class="list" aria-live="polite"></div>
+          </div>
+
+          <div>
+            <div id="selectedTournamentEmpty" class="empty">
+              <p><strong>Selecciona un torneo</strong> para registrar equipos y generar la llave.</p>
+            </div>
+
+            <div id="selectedTournamentPanel" class="panel hidden">
+              <div class="panel__header">
+                <div>
+                  <h3 id="selectedTournamentTitle" class="panel__title"></h3>
+                  <p id="selectedTournamentMeta" class="panel__meta"></p>
+                </div>
+                <div class="panel__actions">
+                  <button id="btnGenerateBracket" class="btn btn--primary" type="button">Generar llave</button>
+                  <button id="btnClearTeams" class="btn btn--ghost" type="button">Vaciar equipos</button>
+                  <div class="inscriptionEditor">
+                    <label class="toggle">
+                      <input id="tournamentIsFreeEdit" type="checkbox" checked />
+                      <span>Gratis</span>
+                    </label>
+                    <input id="tournamentFeeEdit" class="input input--small" type="number" min="0" step="1" placeholder="Costo" disabled />
+                  </div>
+                  <div class="inscriptionEditor" style="margin-left:6px">
+                    <span class="muted small" style="font-family:var(--font-display); font-weight:700; letter-spacing:1px; text-transform:uppercase">Plataforma</span>
+                    <select id="tournamentPlatformEdit" class="input input--small" required>
+                      <option value="xplay.gg" selected>xplay.gg</option>
+                      <option value="FACEIT">FACEIT</option>
+                      <option value="ESEA">ESEA</option>
+                      <option value="ESL">ESL</option>
+                      <option value="Otro">Otro</option>
+                    </select>
+                  </div>
+                  <div class="inscriptionEditor" style="margin-left:6px">
+                    <span class="muted small" style="font-family:var(--font-display); font-weight:700; letter-spacing:1px; text-transform:uppercase">Servidor</span>
+                    <input id="tournamentServerEdit" class="input input--small" type="text" placeholder="Ej: Buenos Aires" minlength="2" maxlength="40" required />
+                  </div>
+                </div>
+              </div>
+
+              <div class="grid2">
+                <div class="card card--inner">
+                  <h4 id="addTeamHeader" class="sectionTitle">Registrar equipo</h4>
+                  <form id="addTeamForm" class="form">
+                    <label class="field">
+                      <span class="field__label">Nombre del equipo</span>
+                      <input id="teamName" class="input" placeholder="Ej: Los AWP" minlength="2" maxlength="40" required />
+                    </label>
+                    <div class="form__actions">
+                      <button class="btn btn--primary" type="submit">Agregar</button>
+                    </div>
+                    <p class="muted small">Confirma los equipos que participan. Luego genera la llave y carga resultados.</p>
+                  </form>
+                </div>
+
+                <div class="card card--inner">
+                  <h4 class="sectionTitle">Equipos</h4>
+                  <div id="teamList" class="list list--teams" aria-live="polite"></div>
+                </div>
+              </div>
+
+              <div class="card card--inner">
+                <div class="bracketHeader">
+                  <h4 class="sectionTitle">Llave y resultados</h4>
+                  <div class="bracketHeader__right">
+                    <label class="toggle">
+                      <input id="shuffleToggle" type="checkbox" checked />
+                      <span>Mezclar equipos</span>
+                    </label>
+                  </div>
+                </div>
+                <div id="bracket" class="bracket"></div>
+                <p id="bracketHint" class="muted small"></p>
+                <p class="muted small">Los resultados se editan aquí y se publican en vivo para la web pública.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span class="muted">Panel privado. Guardado local (tu navegador).</span>
+      </div>
+    </footer>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

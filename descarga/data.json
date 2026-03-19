@@ -1,0 +1,225 @@
+{
+  "exportedAt": 1773892181824,
+  "tournaments": [
+    {
+      "id": "fed30206-1713-4199-b498-9ba4dd098f41",
+      "name": "torneo de prueba",
+      "mode": "5v5",
+      "cap": 8,
+      "createdAt": 1773892072763,
+      "teams": [
+        {
+          "id": "ee7df81b-467f-48c8-8dfd-28320c751328",
+          "name": "los pibes del fondo",
+          "confirmed": true
+        },
+        {
+          "id": "bd806505-32c2-47e4-aab5-6931c0325f3b",
+          "name": "los matapiñas",
+          "confirmed": true
+        },
+        {
+          "id": "2f3af623-50de-429d-822c-a245ee7e3e01",
+          "name": "awp",
+          "confirmed": true
+        },
+        {
+          "id": "79701c9a-b8f5-4a5e-b6c3-bdc6061f6eb5",
+          "name": "ak",
+          "confirmed": true
+        },
+        {
+          "id": "24fe7d01-0268-4fe6-9967-287bd99ce83e",
+          "name": "lr",
+          "confirmed": true
+        },
+        {
+          "id": "6c3672ce-8ff0-4c0d-a420-e48b6caf7c21",
+          "name": "bots",
+          "confirmed": true
+        },
+        {
+          "id": "a8996df2-3ff5-4257-a9ff-c98f96a4a48e",
+          "name": "botardos",
+          "confirmed": true
+        },
+        {
+          "id": "66dffb88-a3a0-418a-b0ae-57babffe40f8",
+          "name": "ojo de alcon",
+          "confirmed": true
+        }
+      ],
+      "bracket": {
+        "size": 8,
+        "rounds": [
+          {
+            "round": 1,
+            "title": "Cuartos",
+            "matches": [
+              {
+                "match": 1,
+                "a": {
+                  "seed": 1,
+                  "teamId": "a8996df2-3ff5-4257-a9ff-c98f96a4a48e",
+                  "teamName": "botardos",
+                  "bye": false
+                },
+                "b": {
+                  "seed": 2,
+                  "teamId": "bd806505-32c2-47e4-aab5-6931c0325f3b",
+                  "teamName": "los matapiñas",
+                  "bye": false
+                },
+                "result": {
+                  "aScore": 13,
+                  "bScore": 9,
+                  "winner": "a",
+                  "updatedAt": 1773892162423
+                }
+              },
+              {
+                "match": 2,
+                "a": {
+                  "seed": 3,
+                  "teamId": "6c3672ce-8ff0-4c0d-a420-e48b6caf7c21",
+                  "teamName": "bots",
+                  "bye": false
+                },
+                "b": {
+                  "seed": 4,
+                  "teamId": "79701c9a-b8f5-4a5e-b6c3-bdc6061f6eb5",
+                  "teamName": "ak",
+                  "bye": false
+                },
+                "result": {
+                  "aScore": 13,
+                  "bScore": 12,
+                  "winner": "a",
+                  "updatedAt": 1773892146668
+                }
+              },
+              {
+                "match": 3,
+                "a": {
+                  "seed": 5,
+                  "teamId": "24fe7d01-0268-4fe6-9967-287bd99ce83e",
+                  "teamName": "lr",
+                  "bye": false
+                },
+                "b": {
+                  "seed": 6,
+                  "teamId": "66dffb88-a3a0-418a-b0ae-57babffe40f8",
+                  "teamName": "ojo de alcon",
+                  "bye": false
+                },
+                "result": {
+                  "aScore": 13,
+                  "bScore": 7,
+                  "winner": "a",
+                  "updatedAt": 1773892169188
+                }
+              },
+              {
+                "match": 4,
+                "a": {
+                  "seed": 7,
+                  "teamId": "ee7df81b-467f-48c8-8dfd-28320c751328",
+                  "teamName": "los pibes del fondo",
+                  "bye": false
+                },
+                "b": {
+                  "seed": 8,
+                  "teamId": "2f3af623-50de-429d-822c-a245ee7e3e01",
+                  "teamName": "awp",
+                  "bye": false
+                },
+                "result": {
+                  "aScore": 13,
+                  "bScore": 8,
+                  "winner": "a",
+                  "updatedAt": 1773892175931
+                }
+              }
+            ]
+          },
+          {
+            "round": 2,
+            "title": "Semifinales",
+            "matches": [
+              {
+                "match": 1,
+                "a": {
+                  "seed": 1,
+                  "teamId": null,
+                  "teamName": "Ganador",
+                  "bye": false
+                },
+                "b": {
+                  "seed": 2,
+                  "teamId": null,
+                  "teamName": "Ganador",
+                  "bye": false
+                },
+                "result": {
+                  "aScore": null,
+                  "bScore": null,
+                  "winner": null,
+                  "updatedAt": null
+                }
+              },
+              {
+                "match": 2,
+                "a": {
+                  "seed": 3,
+                  "teamId": null,
+                  "teamName": "Ganador",
+                  "bye": false
+                },
+                "b": {
+                  "seed": 4,
+                  "teamId": null,
+                  "teamName": "Ganador",
+                  "bye": false
+                },
+                "result": {
+                  "aScore": null,
+                  "bScore": null,
+                  "winner": null,
+                  "updatedAt": null
+                }
+              }
+            ]
+          },
+          {
+            "round": 3,
+            "title": "Final",
+            "matches": [
+              {
+                "match": 1,
+                "a": {
+                  "seed": 1,
+                  "teamId": null,
+                  "teamName": "Ganador",
+                  "bye": false
+                },
+                "b": {
+                  "seed": 2,
+                  "teamId": null,
+                  "teamName": "Ganador",
+                  "bye": false
+                },
+                "result": {
+                  "aScore": null,
+                  "bScore": null,
+                  "winner": null,
+                  "updatedAt": null
+                }
+              }
+            ]
+          }
+        ],
+        "generatedAt": 1773892125593
+      }
+    }
+  ]
+}
