@@ -687,6 +687,9 @@
     if (syncTimer) clearTimeout(syncTimer);
     syncTimer = setTimeout(() => {
       syncTimer = null;
+      // Protección: no sobreescribimos el estado remoto con "[]" cuando el panel
+      // está inicializando o el usuario tiene el panel vacío en local.
+      if (!state.tournaments || state.tournaments.length === 0) return;
       syncToServer().catch(() => {
         // si no hay servidor, no molestamos
       });
