@@ -11,6 +11,7 @@
   const serverAddress = $("serverAddress");
   const btnConnect = $("btnConnect");
   const LAST_ROOM_KEY = "cs_last_waiting_room_v1";
+  const ROOM_POLL_MS = 8000;
 
   function getParams() {
     const sp = new URLSearchParams(window.location.search);
@@ -100,5 +101,6 @@
   }
 
   loadRoom();
+  setInterval(loadRoom, ROOM_POLL_MS);
 })();
 

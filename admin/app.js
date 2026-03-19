@@ -476,7 +476,10 @@
         ${showWinner ? `<div class="slot" style="border-top:1px solid rgba(255,255,255,.10)"><span class="muted">Ganador</span><span class="winnerTag">${escapeHtml(winner === "a" ? match.a.teamName : match.b.teamName)}</span></div>` : ""}
         <div class="slot" style="border-top:1px solid rgba(255,255,255,.10);display:block">
           <div class="slot__tag" style="margin-bottom:8px">Link de conexión (xplay.gg) para este versus</div>
-          <input class="input input--small" type="url" placeholder="https://xplay.gg/match/..." value="${escapeHtml(connectUrl)}" data-action="xplay-url" />
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <input class="input input--small" style="min-width:260px;flex:1 1 260px" type="url" placeholder="https://xplay.gg/match/..." value="${escapeHtml(connectUrl)}" data-action="xplay-url" />
+            <button type="button" class="btn btn--mini btn--primary" data-action="send-xplay-url">Mandar link</button>
+          </div>
         </div>
       </div>
     `;
@@ -1013,7 +1016,7 @@
 
   el.bracket.addEventListener("input", (e) => {
     const target = /** @type {HTMLElement} */ (e.target);
-    const inp = target.closest("input[data-action='score'], input[data-action='xplay-url']");
+    const inp = target.closest("input[data-action='score']");
     if (!inp) return;
     const t = getSelectedTournament();
     if (!t?.bracket) return;
@@ -1029,25 +1032,60 @@
     const m = r?.matches.find((x) => x.match === matchNo);
     if (!m) return;
 
-    const action = inp.getAttribute("data-action");
-    if (action === "xplay-url") {
-      const nextUrl = (/** @type {HTMLInputElement} */ (inp).value ?? "").trim();
-      m.result.connectUrl = nextUrl || null;
-      m.result.updatedAt = Date.now();
-    } else {
-      const score = sanitizeScore(/** @type {HTMLInputElement} */ (inp).value);
-      if (side === "a") m.result.aScore = score;
-      if (side === "b") m.result.bScore = score;
-      m.result.winner = computeWinner(m);
-      m.result.updatedAt = Date.now();
-      // Propagar ganador hacia siguientes rondas
-      propagateAll(t.bracket);
-    }
+    const score = sanitizeScore(/** @type {HTMLInputElement} */ (inp).value);
+    if (side === "a") m.result.aScore = score;
+    if (side === "b") m.result.bScore = score;
+    m.result.winner = computeWinner(m);
+    m.result.updatedAt = Date.now();
+    // Propagar ganador hacia siguientes rondas
+    propagateAll(t.bracket);
     saveState();
     queueServerSync();
 
     // Re-render solo panel (simple)
     renderSelectedTournament();
+  });
+
+  el.bracket.addEventListener("click", (e) => {
+    const target = /** @type {HTMLElement} */ (e.target);
+    const btn = target.closest("button[data-action='send-xplay-url']");
+    if (!btn) return;
+    const t = getSelectedTournament();
+    if (!t?.bracket) return;
+
+    const matchEl = target.closest(".match");
+    if (!matchEl) return;
+    const round = Number(matchEl.getAttribute("data-round"));
+    const matchNo = Number(matchEl.getAttribute("data-match"));
+    if (!round || !matchNo) return;
+
+    const r = t.bracket.rounds.find((x) => x.round === round);
+    const m = r?.matches.find((x) => x.match === matchNo);
+    if (!m) return;
+
+    const urlInput = /** @type {HTMLInputElement|null} */ (matchEl.querySelector("input[data-action='xplay-url']"));
+    const nextUrl = (urlInput?.value ?? "").trim();
+    if (!nextUrl) {
+      m.result.connectUrl = null;
+    } else {
+      try {
+        const parsed = new URL(nextUrl);
+        if (!/^https?:$/.test(parsed.protocol)) {
+          alert("El link debe empezar con http:// o https://");
+          return;
+        }
+      } catch {
+        alert("Ingresá un link válido.");
+        return;
+      }
+      m.result.connectUrl = nextUrl;
+    }
+
+    m.result.updatedAt = Date.now();
+    saveState();
+    queueServerSync();
+    renderSelectedTournament();
+    alert("Link enviado a la sala de este versus.");
   });
 
   el.btnClearTeams.addEventListener("click", () => {
