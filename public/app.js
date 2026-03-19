@@ -310,11 +310,19 @@
           ${links.join("\n")}
           ${nodes.join("\n")}
           ${
-            champ
-              ? `<path class="nodeRect winner" d="${chipPath(170, 22, 5)}" transform="translate(${cx - 170 / 2},${svgH - 44})"/>
-                 <text class="nodeText" x="${cx}" y="${svgH - 28}" text-anchor="middle">CAMPEÓN: ${truncateSvgText(escapeHtml(champ), 18)}</text>`
-              : `<path class="nodeRect dim" d="${chipPath(170, 22, 5)}" transform="translate(${cx - 170 / 2},${svgH - 44})"/>
-                 <text class="nodeText" x="${cx}" y="${svgH - 28}" text-anchor="middle">CAMPEÓN: por definir</text>`
+            (() => {
+              const nameShown = champ ? truncateSvgText(escapeHtml(champ), 18) : "por definir";
+              const shownText = `CAMPEÓN: ${nameShown}`;
+              // Estimación de ancho para que el chip amarillo acompañe el texto.
+              // (SVG: font-size pequeño + letter-spacing). Clampeamos para evitar excesos.
+              const chipW = Math.max(170, Math.min(260, Math.round(shownText.length * 7 + 22)));
+              const chipPathD = chipPath(chipW, 22, 5);
+              const chipClass = champ ? "nodeRect winner" : "nodeRect dim";
+              return `
+                <path class="${chipClass}" d="${chipPathD}" transform="translate(${cx - chipW / 2},${svgH - 44})"/>
+                <text class="nodeText" x="${cx}" y="${svgH - 28}" text-anchor="middle">${escapeHtml(shownText)}</text>
+              `;
+            })()
           }
         </svg>
       </div>
