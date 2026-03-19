@@ -126,6 +126,53 @@ function handleRegister(req, res) {
 app.post("/api/register", handleRegister);
 app.post("/api/register/", handleRegister);
 
+// ---- Static UI routes (explicit) ----
+// En Vercel, los archivos fuera de `public/` pueden no estar disponibles para
+// el resolver dinámico con fs. Para que `/admin/` y `/inscribirse/` funcionen,
+// exponemos rutas explícitas para sus assets HTML/CSS/JS.
+function sendIfExists(filePath, res) {
+  try {
+    if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+      res.sendFile(filePath);
+      return true;
+    }
+  } catch {
+    // ignore
+  }
+  return false;
+}
+
+const ROOT_ADMIN_DIR = path.join(__dirname, "admin");
+const ROOT_INSCRIBIRSE_DIR = path.join(__dirname, "inscribirse");
+
+app.get("/admin", (req, res) => res.redirect("/admin/"));
+app.get("/admin/", (req, res) => {
+  const ok = sendIfExists(path.join(ROOT_ADMIN_DIR, "index.html"), res);
+  if (!ok) res.status(404).send("Cannot GET /admin/");
+});
+app.get("/admin/app.js", (req, res) => {
+  const ok = sendIfExists(path.join(ROOT_ADMIN_DIR, "app.js"), res);
+  if (!ok) res.status(404).send("Cannot GET /admin/app.js");
+});
+app.get("/admin/styles.css", (req, res) => {
+  const ok = sendIfExists(path.join(ROOT_ADMIN_DIR, "styles.css"), res);
+  if (!ok) res.status(404).send("Cannot GET /admin/styles.css");
+});
+
+app.get("/inscribirse", (req, res) => res.redirect("/inscribirse/"));
+app.get("/inscribirse/", (req, res) => {
+  const ok = sendIfExists(path.join(ROOT_INSCRIBIRSE_DIR, "index.html"), res);
+  if (!ok) res.status(404).send("Cannot GET /inscribirse/");
+});
+app.get("/inscribirse/app.js", (req, res) => {
+  const ok = sendIfExists(path.join(ROOT_INSCRIBIRSE_DIR, "app.js"), res);
+  if (!ok) res.status(404).send("Cannot GET /inscribirse/app.js");
+});
+app.get("/inscribirse/styles.css", (req, res) => {
+  const ok = sendIfExists(path.join(ROOT_INSCRIBIRSE_DIR, "styles.css"), res);
+  if (!ok) res.status(404).send("Cannot GET /inscribirse/styles.css");
+});
+
 app.get("/api/stream", (req, res) => {
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
