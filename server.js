@@ -99,7 +99,19 @@ app.post("/api/data", (req, res) => {
     res.status(400).json({ ok: false, error: "Formato inválido" });
     return;
   }
-  const next = { exportedAt: Date.now(), tournaments: body.tournaments };
+  const clearAll = Boolean(body.clearAll);
+  const incomingTournaments = body.tournaments;
+
+  // Evita que un publish "vacío" (tournaments: []) sobreescriba el estado real en Supabase.
+  if (USE_SUPABASE && Array.isArray(incomingTournaments) && incomingTournaments.length === 0 && !clearAll) {
+    getStateSupabase()
+      .then((current) => persist(current))
+      .then(() => res.json({ ok: true, skipped: true }))
+      .catch(() => res.status(500).json({ ok: false, error: "No se pudo persistir en Supabase" }));
+    return;
+  }
+
+  const next = { exportedAt: Date.now(), tournaments: incomingTournaments };
   persist(next)
     .then(() => res.json({ ok: true }))
     .catch(() => res.status(500).json({ ok: false, error: "No se pudo persistir en Supabase" }));
