@@ -15,6 +15,7 @@
   let data = null;
   /** @type {string|null} */
   let selectedId = null;
+  let pollTimer = null;
 
   function escapeHtml(str) {
     return String(str)
@@ -364,7 +365,36 @@
       data = { exportedAt: Date.now(), tournaments: [] };
       selectedId = null;
       render();
+      // Si el fetch inicial falla (o cae con lista vacía), igual intentamos en background.
+      startPolling();
     }
+  }
+
+  async function pollOnce() {
+    try {
+      const res = await fetch("/api/data", { cache: "no-store" });
+      if (!res.ok) return;
+      const json = await res.json();
+      if (!json || typeof json !== "object" || !Array.isArray(json.tournaments)) return;
+
+      data = json;
+      if (!selectedId) selectedId = data.tournaments[0]?.id ?? null;
+      if (selectedId && !data.tournaments.some((t) => t.id === selectedId)) {
+        selectedId = data.tournaments[0]?.id ?? null;
+      }
+      render();
+    } catch {
+      // ignore
+    }
+  }
+
+  function startPolling() {
+    if (pollTimer) return;
+    pollOnce();
+    pollTimer = setInterval(() => {
+      if (document.visibilityState === "hidden") return;
+      pollOnce();
+    }, 4000);
   }
 
   function connectStream() {
@@ -390,7 +420,11 @@
         }
       };
       es.onerror = () => {
-        // si falla, dejamos el fetch inicial como fallback
+        // SSE en Vercel puede fallar por streaming. Usamos polling como fallback.
+        try {
+          es.close();
+        } catch {}
+        startPolling();
       };
     } catch {
       // ignore
@@ -411,5 +445,7 @@
   // Init
   loadFromPublicJson();
   connectStream();
+  // Fallback adicional en caso de que SSE no actualice.
+  startPolling();
 })();
 
