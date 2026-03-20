@@ -404,6 +404,18 @@ function sendIfExists(filePath, res) {
   return false;
 }
 
+/** Evita falsos negativos en Windows (C: vs c:) y rutas sin normalizar. */
+function fileIsUnderAnyBase(filePath, bases) {
+  const resolvedFile = path.resolve(filePath);
+  for (const b of bases) {
+    const resolvedBase = path.resolve(b);
+    if (resolvedFile === resolvedBase) return true;
+    const rel = path.relative(resolvedBase, resolvedFile);
+    if (rel && !rel.startsWith("..") && !path.isAbsolute(rel)) return true;
+  }
+  return false;
+}
+
 const ROOT_ADMIN_DIR = path.join(__dirname, "admin");
 const ROOT_INSCRIBIRSE_DIR = path.join(__dirname, "inscribirse");
 const ROOT_SALA_DIR = path.join(__dirname, "sala");
@@ -457,6 +469,19 @@ app.get("/sala/app.js", (req, res) => {
 app.get("/sala/styles.css", (req, res) => {
   const ok = sendIfExists(path.join(ROOT_SALA_DIR, "styles.css"), res);
   if (!ok) res.status(404).send("Cannot GET /sala/styles.css");
+});
+
+// Menú principal: imagen en /assets/ (Vercel + Windows; ruta explícita)
+app.get("/assets/fondo-menu.png", (req, res) => {
+  const candidates = [
+    path.join(__dirname, "assets", "fondo-menu.png"),
+    path.join(process.cwd(), "assets", "fondo-menu.png"),
+    path.join(path.dirname(__dirname), "assets", "fondo-menu.png"),
+  ];
+  for (const fp of candidates) {
+    if (sendIfExists(fp, res)) return;
+  }
+  res.status(404).send("Cannot GET /assets/fondo-menu.png");
 });
 
 app.get("/api/stream", (req, res) => {
@@ -537,7 +562,7 @@ app.use((req, res) => {
     for (const t of targets) {
       const candidates = bases.map((b) => path.join(b, t));
       for (const filePath of candidates) {
-        if (!safeBases.some((sb) => filePath.startsWith(sb))) continue;
+        if (!fileIsUnderAnyBase(filePath, safeBases)) continue;
         if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
           res.sendFile(filePath);
           return;
