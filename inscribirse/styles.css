@@ -24,10 +24,16 @@ body {
   font-weight: 500;
   color: var(--text);
   background-color: var(--bg-deep);
+  /* Capas: cuadrícula arriba, overlay oscuro, foto (ruta relativa al CSS en /inscribirse/) */
   background-image:
     linear-gradient(rgba(255, 149, 0, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 149, 0, 0.03) 1px, transparent 1px);
-  background-size: 24px 24px;
+    linear-gradient(90deg, rgba(255, 149, 0, 0.03) 1px, transparent 1px),
+    linear-gradient(160deg, rgba(8, 8, 10, 0.88), rgba(8, 8, 10, 0.78)),
+    url("../assets/fondo-inscribirse.webp");
+  background-size: 24px 24px, 24px 24px, cover, cover;
+  background-position: 0 0, 0 0, center, center;
+  background-repeat: repeat, repeat, no-repeat, no-repeat;
+  background-attachment: fixed;
   min-height: 100vh;
   position: relative;
 }
