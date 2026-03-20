@@ -40,6 +40,19 @@ body {
   overflow-x: hidden;
 }
 
+/* Vista pública de torneos (public/brackets/): mismo esquema que el menú — grilla + velo + imagen */
+body.page-public-brackets {
+  background-image:
+    linear-gradient(rgba(255, 149, 0, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 149, 0, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(6, 6, 8, 0.55), rgba(6, 6, 8, 0.5)),
+    url("/assets/fondo-public-brackets.png");
+  background-size: 24px 24px, 24px 24px, auto, cover;
+  background-position: 0 0, 0 0, center, center;
+  background-repeat: repeat, repeat, no-repeat, no-repeat;
+  background-attachment: scroll;
+}
+
 /* ---- Layout ---- */
 .container { max-width: 1100px; margin: 0 auto; padding: 0 18px; }
 .layout { padding: 18px 0 34px; display: grid; gap: 14px; }

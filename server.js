@@ -484,6 +484,18 @@ app.get("/assets/fondo-menu.png", (req, res) => {
   res.status(404).send("Cannot GET /assets/fondo-menu.png");
 });
 
+app.get("/assets/fondo-public-brackets.png", (req, res) => {
+  const candidates = [
+    path.join(__dirname, "assets", "fondo-public-brackets.png"),
+    path.join(process.cwd(), "assets", "fondo-public-brackets.png"),
+    path.join(path.dirname(__dirname), "assets", "fondo-public-brackets.png"),
+  ];
+  for (const fp of candidates) {
+    if (sendIfExists(fp, res)) return;
+  }
+  res.status(404).send("Cannot GET /assets/fondo-public-brackets.png");
+});
+
 app.get("/api/stream", (req, res) => {
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
