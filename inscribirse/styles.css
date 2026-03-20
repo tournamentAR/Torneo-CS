@@ -24,7 +24,7 @@ body {
   font-weight: 500;
   color: var(--text);
   background-color: var(--bg-deep);
-  background-image: url("../assets/fondo-inscribirse.webp");
+  background-image: url("/assets/fondo-inscribirse.webp");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
