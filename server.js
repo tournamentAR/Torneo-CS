@@ -1,3 +1,4 @@
+import "dotenv/config";
 import express from "express";
 import fs from "node:fs";
 import path from "node:path";
@@ -112,6 +113,18 @@ app.post("/api/admin/login", (req, res) => {
     console.error("/api/admin/login error:", e);
     res.status(500).json({ ok: false, error: "Server error" });
   }
+});
+
+/** Claves públicas para el cliente (anon key). No exponer service_role. */
+app.get("/api/public-config", (_req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+  if (!supabaseUrl || !supabaseAnonKey) {
+    res.json({ ok: false, error: "Supabase público no configurado (SUPABASE_URL / SUPABASE_ANON_KEY)." });
+    return;
+  }
+  res.json({ ok: true, supabaseUrl, supabaseAnonKey });
 });
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -469,6 +482,25 @@ app.get("/sala/app.js", (req, res) => {
 app.get("/sala/styles.css", (req, res) => {
   const ok = sendIfExists(path.join(ROOT_SALA_DIR, "styles.css"), res);
   if (!ok) res.status(404).send("Cannot GET /sala/styles.css");
+});
+
+const ROOT_CUENTA_DIR = path.join(__dirname, "cuenta");
+
+function sendCuentaIndex(res) {
+  const ok = sendIfExists(path.join(ROOT_CUENTA_DIR, "index.html"), res);
+  if (!ok) res.status(404).send("Cannot GET /cuenta/");
+}
+
+app.get("/cuenta", (req, res) => sendCuentaIndex(res));
+app.get("/cuenta/", (req, res) => sendCuentaIndex(res));
+app.get("/cuenta/index.html", (req, res) => sendCuentaIndex(res));
+app.get("/cuenta/app.js", (req, res) => {
+  const ok = sendIfExists(path.join(ROOT_CUENTA_DIR, "app.js"), res);
+  if (!ok) res.status(404).send("Cannot GET /cuenta/app.js");
+});
+app.get("/cuenta/styles.css", (req, res) => {
+  const ok = sendIfExists(path.join(ROOT_CUENTA_DIR, "styles.css"), res);
+  if (!ok) res.status(404).send("Cannot GET /cuenta/styles.css");
 });
 
 // Menú principal: imagen en /assets/ (Vercel + Windows; ruta explícita)

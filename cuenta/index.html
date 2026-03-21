@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mi cuenta — Torneos CS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="header">
+      <div class="container header__inner">
+        <h1 class="title">Mi cuenta</h1>
+        <p class="subtitle">Registrate, confirmá el email con el enlace y entrá con tu usuario.</p>
+        <a href="../" class="back">← Volver</a>
+      </div>
+    </header>
+
+    <main class="container main">
+      <div id="loading" class="card">Cargando…</div>
+      <div id="configError" class="card card--error hidden" role="alert"></div>
+
+      <div id="appMain" class="hidden">
+        <div id="loggedSection" class="card hidden">
+          <h2 class="card__title">Tu perfil</h2>
+          <p class="profileLine"><span class="profileLine__k">Nombre de usuario</span> <span id="loggedUsername" class="profileLine__v"></span></p>
+          <p class="profileLine"><span class="profileLine__k">Email</span> <span id="loggedEmail" class="profileLine__v"></span></p>
+
+          <form id="formUsername" class="profileEdit">
+            <label class="field">
+              <span class="field__label">Cambiar nombre de usuario</span>
+              <input id="newUsername" class="input" type="text" autocomplete="username" minlength="3" maxlength="24" pattern="[a-z0-9_]{3,24}" title="Letras minúsculas, números y guión bajo, 3 a 24 caracteres" />
+            </label>
+            <div class="form__actions">
+              <button class="btn btn--secondary" type="submit">Guardar nombre</button>
+            </div>
+            <p id="usernameMsg" class="field__hint" aria-live="polite"></p>
+          </form>
+
+          <div class="form__actions" style="margin-top: 16px">
+            <button id="logoutBtn" class="btn" type="button">Cerrar sesión</button>
+          </div>
+        </div>
+
+        <div id="authSection" class="card hidden">
+          <div class="tabs" role="tablist">
+            <button type="button" id="tabLogin" class="tabs__btn is-active" role="tab" aria-selected="true">Entrar</button>
+            <button type="button" id="tabRegister" class="tabs__btn" role="tab" aria-selected="false">Crear cuenta</button>
+          </div>
+
+          <div id="panelLogin" class="panel" role="tabpanel">
+            <form id="formLogin">
+              <label class="field">
+                <span class="field__label">Email</span>
+                <input id="loginEmail" class="input" type="email" autocomplete="email" required />
+              </label>
+              <label class="field">
+                <span class="field__label">Contraseña</span>
+                <input id="loginPassword" class="input" type="password" autocomplete="current-password" minlength="6" required />
+              </label>
+              <p id="msgLogin" class="msg msg--error hidden" role="alert"></p>
+              <div class="form__actions">
+                <button class="btn btn--primary" type="submit">Entrar</button>
+              </div>
+            </form>
+          </div>
+
+          <div id="panelRegister" class="panel hidden" role="tabpanel">
+            <form id="formRegister">
+              <label class="field">
+                <span class="field__label">Nombre de usuario</span>
+                <input id="regUsername" class="input" type="text" autocomplete="username" minlength="3" maxlength="24" required placeholder="ej: fragger_latam" />
+                <span class="field__hint">Solo minúsculas, números y _ (3–24 caracteres).</span>
+              </label>
+              <label class="field">
+                <span class="field__label">Email</span>
+                <input id="regEmail" class="input" type="email" autocomplete="email" required />
+              </label>
+              <label class="field">
+                <span class="field__label">Contraseña</span>
+                <input id="regPassword" class="input" type="password" autocomplete="new-password" minlength="8" required />
+              </label>
+              <label class="field">
+                <span class="field__label">Repetir contraseña</span>
+                <input id="regPassword2" class="input" type="password" autocomplete="new-password" minlength="8" required />
+              </label>
+              <p id="msgRegister" class="msg msg--error hidden" role="alert"></p>
+              <div id="registerSuccess" class="registerSuccess hidden" role="status">
+                <p><strong>Listo.</strong> Te enviamos un email con un enlace para confirmar la cuenta. Cuando lo abras, volvé acá e iniciá sesión.</p>
+              </div>
+              <div class="form__actions" id="registerActions">
+                <button class="btn btn--primary" type="submit">Crear cuenta</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

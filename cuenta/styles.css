@@ -1,0 +1,273 @@
+/* Mi cuenta — alineado con inscribirse */
+
+:root {
+  --bg-deep: #08080a;
+  --bg-panel: rgba(20, 20, 25, 0.8);
+  --neon-orange: #ff9500;
+  --neon-glow: 0 0 12px rgba(255, 149, 0, 0.35), 0 0 24px rgba(255, 149, 0, 0.15);
+  --neon-glow-strong: 0 0 16px rgba(255, 149, 0, 0.5), 0 0 32px rgba(255, 149, 0, 0.2);
+  --text: #e8eefc;
+  --muted: #9aa9c7;
+  --border: rgba(255, 149, 0, 0.25);
+  --ok: #8cffc5;
+  --danger: #ff5b74;
+  --chip: 10px;
+  --font-display: "Orbitron", sans-serif;
+  --font-body: "Rajdhani", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: var(--font-body);
+  font-weight: 500;
+  color: var(--text);
+  background-color: var(--bg-deep);
+  background-image: url("/assets/fondo-inscribirse.webp");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  min-height: 100vh;
+}
+
+.container {
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 0 18px;
+}
+.main {
+  padding: 24px 0 48px;
+}
+
+.header {
+  background: rgba(8, 8, 10, 0.92);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  padding: 18px 0;
+}
+.header__inner {
+  position: relative;
+}
+.title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.subtitle {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-family: var(--font-body);
+}
+.back {
+  position: absolute;
+  top: 0;
+  right: 0;
+  color: var(--neon-orange);
+  text-decoration: none;
+  font-size: 14px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+.back:hover {
+  text-decoration: underline;
+  text-shadow: 0 0 8px rgba(255, 149, 0, 0.4);
+}
+
+.card {
+  background: var(--bg-panel);
+  border: 1px solid var(--neon-orange);
+  clip-path: polygon(
+    var(--chip) 0,
+    0 var(--chip),
+    0 calc(100% - var(--chip)),
+    var(--chip) 100%,
+    calc(100% - var(--chip)) 100%,
+    100% calc(100% - var(--chip)),
+    100% var(--chip),
+    calc(100% - var(--chip)) 0
+  );
+  box-shadow: var(--neon-glow), inset 0 0 20px rgba(0, 0, 0, 0.3);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.card__title {
+  margin: 0 0 16px;
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.card--error {
+  border-color: rgba(255, 91, 116, 0.5);
+  background: linear-gradient(180deg, rgba(40, 15, 20, 0.95), rgba(30, 10, 15, 0.95));
+  box-shadow: 0 0 16px rgba(255, 91, 116, 0.2);
+}
+
+.hidden {
+  display: none !important;
+}
+
+.field {
+  display: block;
+  margin-bottom: 14px;
+}
+.field__label {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--neon-orange);
+  margin-bottom: 6px;
+}
+.field__hint {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.field__hint--error {
+  color: var(--danger) !important;
+}
+
+.input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 16px;
+}
+.input:focus {
+  outline: none;
+  border-color: rgba(255, 149, 0, 0.65);
+  box-shadow: 0 0 0 1px rgba(255, 149, 0, 0.25);
+}
+
+.form__actions {
+  margin-top: 8px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.4);
+  color: var(--text);
+  cursor: pointer;
+}
+.btn:hover {
+  border-color: rgba(255, 149, 0, 0.55);
+}
+.btn--primary {
+  background: linear-gradient(180deg, rgba(255, 120, 30, 0.35), rgba(180, 70, 0, 0.45));
+  border-color: rgba(255, 149, 0, 0.55);
+  box-shadow: var(--neon-glow);
+}
+.btn--primary:hover {
+  box-shadow: var(--neon-glow-strong);
+}
+.btn--secondary {
+  background: rgba(30, 40, 55, 0.6);
+  border-color: rgba(120, 180, 255, 0.35);
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.tabs__btn {
+  flex: 1;
+  padding: 10px;
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--muted);
+  cursor: pointer;
+}
+.tabs__btn.is-active {
+  color: var(--text);
+  border-color: rgba(255, 149, 0, 0.55);
+  box-shadow: var(--neon-glow);
+}
+
+.panel {
+  margin-top: 4px;
+}
+
+.msg {
+  font-size: 13px;
+  margin: 0 0 12px;
+}
+.msg--error {
+  color: var(--danger);
+}
+
+.registerSuccess {
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  border: 1px solid rgba(140, 255, 197, 0.45);
+  border-radius: 4px;
+  background: rgba(10, 35, 25, 0.55);
+  color: var(--ok);
+  font-size: 14px;
+}
+.registerSuccess p {
+  margin: 0;
+}
+
+.profileLine {
+  margin: 0 0 10px;
+  font-size: 15px;
+}
+.profileLine__k {
+  display: inline-block;
+  min-width: 140px;
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.profileLine__v {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.profileEdit {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 149, 0, 0.2);
+}
