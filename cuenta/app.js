@@ -492,7 +492,13 @@ async function cuentaBoot() {
       return;
     }
 
-    const { error } = await supabase.from("profiles").update({ username: raw }).eq("id", user.id);
+    // upsert: si no había fila en profiles, el UPDATE solo afectaba 0 filas y al recargar se perdía el nombre.
+    const { data: saved, error } = await supabase
+      .from("profiles")
+      .upsert({ id: user.id, username: raw }, { onConflict: "id" })
+      .select("username")
+      .maybeSingle();
+
     if (error) {
       if (hint) {
         hint.textContent = error.message || "No se pudo actualizar.";
@@ -500,9 +506,18 @@ async function cuentaBoot() {
       }
       return;
     }
+    if (!saved?.username) {
+      if (hint) {
+        hint.textContent = "No se pudo guardar el nombre. Revisá permisos en Supabase (migración 004_profiles_insert_own.sql).";
+        hint.classList.add("field__hint--error");
+      }
+      return;
+    }
 
     if (hint) hint.textContent = "Nombre actualizado.";
-    setText("loggedUsername", raw);
+    setText("loggedUsername", saved.username);
+    const nu = $("newUsername");
+    if (nu) nu.value = saved.username;
   });
 
   async function setAccountMode(mode) {

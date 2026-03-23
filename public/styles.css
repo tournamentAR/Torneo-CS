@@ -89,6 +89,30 @@ body.page-public-brackets {
   color: var(--text-muted);
 }
 
+.header__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.headerBack {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: var(--neon-orange);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.headerBack:hover {
+  text-decoration: underline;
+  text-shadow: 0 0 8px rgba(255, 149, 0, 0.4);
+}
+.pill--btn {
+  cursor: pointer;
+}
+
 /* ---- Cards (chip-style clip-path) ---- */
 .card {
   background: var(--bg-panel);
