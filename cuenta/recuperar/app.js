@@ -1,4 +1,21 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.99.3";
+async function loadSupabaseCreateClient() {
+  const urls = [
+    "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.99.3/+esm",
+    "https://esm.sh/@supabase/supabase-js@2.99.3",
+  ];
+  let lastErr;
+  for (const url of urls) {
+    try {
+      const mod = await import(url);
+      const fn = mod.createClient;
+      if (typeof fn === "function") return fn;
+      lastErr = new Error("createClient no disponible");
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  throw lastErr ?? new Error("No se pudo cargar @supabase/supabase-js");
+}
 
 const $ = (id) => document.getElementById(id);
 
@@ -46,17 +63,41 @@ async function getRecoverySession(supabase) {
   });
 }
 
-async function main() {
-  const loadingEl = $("loading");
+async function recuperarBoot() {
+  let createClient;
+  try {
+    createClient = await loadSupabaseCreateClient();
+  } catch (e) {
+    console.error(e);
+    throw new Error(
+      "No se pudo cargar el sistema de sesión. Probá sin bloqueador de anuncios u otra red."
+    );
+  }
+
   const configError = $("configError");
   const appMain = $("appMain");
   const noSession = $("noSession");
 
-  const res = await fetch("/api/public-config");
+  const ac = new AbortController();
+  const fetchTimer = window.setTimeout(() => ac.abort(), 20000);
+  let res;
+  try {
+    res = await fetch("/api/public-config", { signal: ac.signal, cache: "no-store" });
+  } finally {
+    window.clearTimeout(fetchTimer);
+  }
+
+  if (!res.ok) {
+    throw new Error(
+      res.status === 404
+        ? "No se encontró /api/public-config. Revisá el despliegue."
+        : `El servidor respondió ${res.status}.`
+    );
+  }
+
   const cfg = await res.json();
 
   if (!cfg.ok) {
-    loadingEl.classList.add("hidden");
     configError.classList.remove("hidden");
     configError.textContent =
       "Supabase no está configurado en el servidor. Añadí SUPABASE_URL y SUPABASE_ANON_KEY al entorno y reiniciá el servidor.";
@@ -73,8 +114,6 @@ async function main() {
   });
 
   const session = await getRecoverySession(supabase);
-
-  loadingEl.classList.add("hidden");
 
   if (!session) {
     noSession.classList.remove("hidden");
@@ -108,13 +147,23 @@ async function main() {
   });
 }
 
-main().catch((err) => {
-  console.error(err);
-  const loadingEl = $("loading");
+async function main() {
   const configError = $("configError");
-  if (loadingEl) loadingEl.classList.add("hidden");
-  if (configError) {
-    configError.classList.remove("hidden");
-    configError.textContent = "Error al cargar la página. Revisá la consola del navegador.";
+  try {
+    await recuperarBoot();
+  } catch (err) {
+    console.error(err);
+    if (configError && configError.classList.contains("hidden")) {
+      const msg =
+        err?.name === "AbortError"
+          ? "La petición tardó demasiado. Revisá tu conexión."
+          : err?.message || "Error al cargar la página.";
+      configError.textContent = msg;
+      configError.classList.remove("hidden");
+    }
+  } finally {
+    $("loading")?.classList.add("hidden");
   }
-});
+}
+
+main();

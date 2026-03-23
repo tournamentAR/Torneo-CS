@@ -1,6 +1,24 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.99.3";
-
 const USERNAME_RE = /^[a-z0-9_]{3,24}$/;
+
+/** Import dinámico: si esm.sh falla o está bloqueado, probamos jsDelivr (evita pantalla infinita en "Cargando"). */
+async function loadSupabaseCreateClient() {
+  const urls = [
+    "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.99.3/+esm",
+    "https://esm.sh/@supabase/supabase-js@2.99.3",
+  ];
+  let lastErr;
+  for (const url of urls) {
+    try {
+      const mod = await import(url);
+      const fn = mod.createClient;
+      if (typeof fn === "function") return fn;
+      lastErr = new Error("createClient no disponible en el módulo");
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  throw lastErr ?? new Error("No se pudo cargar @supabase/supabase-js");
+}
 
 const $ = (id) => document.getElementById(id);
 
@@ -46,16 +64,40 @@ function rpcErrorMessage(err) {
   return m.length > 120 ? "No se pudo completar la acción." : m;
 }
 
-async function main() {
-  const loadingEl = $("loading");
+async function cuentaBoot() {
+  let createClient;
+  try {
+    createClient = await loadSupabaseCreateClient();
+  } catch (e) {
+    console.error(e);
+    throw new Error(
+      "No se pudo cargar el sistema de sesión (scripts desde internet bloqueados o sin conexión). Probá desactivar bloqueadores, otra red o la ventana normal si usás incógnito."
+    );
+  }
+
   const configError = $("configError");
   const appMain = $("appMain");
 
-  const res = await fetch("/api/public-config");
+  const ac = new AbortController();
+  const fetchTimer = window.setTimeout(() => ac.abort(), 20000);
+  let res;
+  try {
+    res = await fetch("/api/public-config", { signal: ac.signal, cache: "no-store" });
+  } finally {
+    window.clearTimeout(fetchTimer);
+  }
+
+  if (!res.ok) {
+    throw new Error(
+      res.status === 404
+        ? "No se encontró /api/public-config. Revisá el despliegue (Vercel / servidor)."
+        : `El servidor respondió ${res.status} al pedir la configuración.`
+    );
+  }
+
   const cfg = await res.json();
 
   if (!cfg.ok) {
-    loadingEl.classList.add("hidden");
     configError.classList.remove("hidden");
     configError.textContent =
       "Supabase no está configurado en el servidor. Añadí SUPABASE_URL y SUPABASE_ANON_KEY al entorno (archivo .env o variables del host) y reiniciá el servidor.";
@@ -253,7 +295,6 @@ async function main() {
   await supabase.auth.getSession();
   await refreshUI();
 
-  loadingEl.classList.add("hidden");
   appMain.classList.remove("hidden");
 
   const tabLogin = $("tabLogin");
@@ -570,13 +611,23 @@ async function main() {
   });
 }
 
-main().catch((err) => {
-  console.error(err);
-  const loadingEl = $("loading");
+async function main() {
   const configError = $("configError");
-  if (loadingEl) loadingEl.classList.add("hidden");
-  if (configError) {
-    configError.classList.remove("hidden");
-    configError.textContent = "Error al iniciar la cuenta. Revisá la consola del navegador.";
+  try {
+    await cuentaBoot();
+  } catch (err) {
+    console.error(err);
+    if (configError && configError.classList.contains("hidden")) {
+      const msg =
+        err?.name === "AbortError"
+          ? "La petición al servidor tardó demasiado. Revisá tu conexión."
+          : err?.message || "Error al iniciar la cuenta. Abrí la consola (F12) para más detalle.";
+      configError.textContent = msg;
+      configError.classList.remove("hidden");
+    }
+  } finally {
+    $("loading")?.classList.add("hidden");
   }
-});
+}
+
+main();
