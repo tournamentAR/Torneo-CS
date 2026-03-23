@@ -1,5 +1,7 @@
 -- Equipos de cuenta: líder crea squad, invita por username; jugador entra con código.
 -- Ejecutar en Supabase → SQL Editor después de 001_player_profiles.sql
+-- Después de este archivo, ejecutar también 003_fix_squad_rls_recursion.sql
+-- (corrige recursión en las políticas RLS de squad_members / squads).
 --
 -- Política: solo funciones SECURITY DEFINER modifican squads/squad_members.
 -- Lectura vía RLS para miembros del mismo equipo.

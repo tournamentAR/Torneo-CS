@@ -495,3 +495,39 @@ body {
   pointer-events: none;
   opacity: 0.55;
 }
+
+.squadFillBar {
+  margin: 0 0 18px;
+  padding: 14px 14px 16px;
+  border: 1px solid rgba(120, 180, 255, 0.35);
+  border-radius: 4px;
+  background: rgba(12, 22, 40, 0.55);
+}
+.squadFillBar__msg {
+  margin: 0 0 8px;
+  font-size: 14px;
+  line-height: 1.45;
+}
+.squadFillBar__msg a {
+  color: var(--neon-orange);
+}
+.squadFillBar__hint {
+  margin: 0 0 12px !important;
+}
+.squadFillBar__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+.btn--ghost {
+  background: transparent;
+  border-color: rgba(255, 149, 0, 0.35);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.btn--ghost:hover {
+  border-color: rgba(255, 149, 0, 0.55);
+}

@@ -13,7 +13,7 @@
     <header class="header">
       <div class="container header__inner">
         <h1 class="title">Inscribir equipo</h1>
-        <p class="subtitle">Elegí un torneo y cargá nombre del equipo y jugadores.</p>
+        <p class="subtitle">Elegí un torneo y cargá nombre del equipo y jugadores. Si ya armaste el equipo en <a href="../cuenta/" style="color:var(--neon-orange, #ff9500)">Mi cuenta</a>, podés rellenar el formulario con un clic.</p>
         <a href="../" class="back">← Volver</a>
       </div>
     </header>
@@ -34,6 +34,15 @@
 
       <form id="formInscripcion" class="card hidden">
         <h2 class="card__title">Datos del equipo</h2>
+
+        <div id="squadFillBar" class="squadFillBar hidden" aria-live="polite">
+          <p id="squadFillMsg" class="squadFillBar__msg"></p>
+          <p id="squadFillHint" class="squadFillBar__hint field__hint"></p>
+          <div class="squadFillBar__actions">
+            <button type="button" id="squadFillBtn" class="btn btn--secondary">Rellenar con mi equipo</button>
+            <a href="../cuenta/" class="btn btn--ghost">Ir a Mi cuenta</a>
+          </div>
+        </div>
 
         <label class="field">
           <span class="field__label">Torneo</span>

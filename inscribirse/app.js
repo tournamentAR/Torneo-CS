@@ -23,6 +23,10 @@
   const wrongServerBanner = $("wrongServerBanner");
   const submitError = $("submitError");
   const submitErrorText = $("submitErrorText");
+  const squadFillBar = $("squadFillBar");
+  const squadFillMsg = $("squadFillMsg");
+  const squadFillHint = $("squadFillHint");
+  const squadFillBtn = $("squadFillBtn");
 
   const RULES_STORAGE_KEY = "mercRulesAccepted_v1";
   const mercModal = $("mercRulesModal");
@@ -141,6 +145,135 @@
 
   let tournaments = [];
 
+  /** @type {{ name: string, roster: string[] } | null} */
+  let cachedSquad = null;
+
+  async function loadSupabaseCreateClient() {
+    const urls = [
+      "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.99.3/+esm",
+      "https://esm.sh/@supabase/supabase-js@2.99.3",
+    ];
+    let lastErr;
+    for (const url of urls) {
+      try {
+        const mod = await import(url);
+        const fn = mod.createClient;
+        if (typeof fn === "function") return fn;
+        lastErr = new Error("createClient missing");
+      } catch (e) {
+        lastErr = e;
+      }
+    }
+    throw lastErr ?? new Error("supabase-js");
+  }
+
+  function updateSquadFillHint(t) {
+    if (!squadFillHint || !cachedSquad) return;
+    if (!t) {
+      squadFillHint.textContent = "";
+      return;
+    }
+    const req = PLAYERS_BY_MODE[t.mode] ?? 5;
+    const n = cachedSquad.roster.length;
+    if (n >= req) {
+      squadFillHint.textContent = `Podés rellenar: ${n} jugador(es) confirmado(s) en tu cuenta; este torneo pide ${req}.`;
+    } else {
+      squadFillHint.textContent = `En Mi cuenta tenés ${n} jugador(es) confirmado(s); este torneo (${t.mode}) pide ${req}. Invitá o confirmá jugadores en Mi cuenta.`;
+    }
+  }
+
+  async function initSquadPrefill() {
+    cachedSquad = null;
+    if (!squadFillBar || !squadFillMsg || !squadFillBtn) return;
+    squadFillBar.classList.add("hidden");
+    squadFillMsg.textContent = "";
+    if (squadFillHint) squadFillHint.textContent = "";
+
+    const base = getApiBase();
+    if (!base) return;
+
+    try {
+      const cfgRes = await fetch(base + "/api/public-config", { cache: "no-store" });
+      if (!cfgRes.ok) return;
+      const cfg = await cfgRes.json();
+      if (!cfg.ok) return;
+
+      const createClient = await loadSupabaseCreateClient();
+      const supabase = createClient(cfg.supabaseUrl, cfg.supabaseAnonKey, {
+        auth: {
+          flowType: "pkce",
+          persistSession: true,
+          autoRefreshToken: true,
+          detectSessionInUrl: false,
+        },
+      });
+
+      await supabase.auth.getSession();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      squadFillBar.classList.remove("hidden");
+
+      if (!user) {
+        squadFillMsg.innerHTML =
+          'Si ya creaste un equipo en <a href="../cuenta/">Mi cuenta</a>, iniciá sesión ahí (mismo navegador) y <strong>recargá esta página</strong> para rellenar el formulario automáticamente.';
+        squadFillBtn.classList.add("hidden");
+        return;
+      }
+
+      const { data: squad, error: sqErr } = await supabase.from("squads").select("id,name").eq("leader_id", user.id).maybeSingle();
+      if (sqErr || !squad) {
+        squadFillMsg.textContent =
+          "No tenés un equipo como líder en Mi cuenta. Podés crearlo ahí y confirmar jugadores, o cargar los datos a mano abajo.";
+        squadFillBtn.classList.add("hidden");
+        return;
+      }
+
+      const { data: members, error: memErr } = await supabase
+        .from("squad_members")
+        .select("user_id, is_leader")
+        .eq("squad_id", squad.id)
+        .eq("status", "confirmed");
+
+      if (memErr || !members || members.length === 0) {
+        squadFillMsg.textContent = "Tu equipo existe pero todavía no hay jugadores confirmados. Confirmá el plantel en Mi cuenta o cargá a mano.";
+        squadFillBtn.classList.add("hidden");
+        return;
+      }
+
+      const ids = members.map((m) => m.user_id);
+      const { data: profiles } = await supabase.from("profiles").select("id, username").in("id", ids);
+      const nameById = new Map((profiles || []).map((p) => [p.id, (p.username || "").trim() || p.id.slice(0, 8)]));
+
+      const leaders = members.filter((m) => m.is_leader);
+      const others = members
+        .filter((m) => !m.is_leader)
+        .sort((a, b) => (nameById.get(a.user_id) || "").localeCompare(nameById.get(b.user_id) || "", "es"));
+      const ordered = [...leaders, ...others];
+      const roster = ordered.map((m) => nameById.get(m.user_id) || String(m.user_id).slice(0, 8));
+
+      cachedSquad = { name: squad.name || "Mi equipo", roster };
+      squadFillMsg.replaceChildren();
+      squadFillMsg.append("Equipo ");
+      const nameStrong = document.createElement("strong");
+      nameStrong.textContent = squad.name || "Mi equipo";
+      squadFillMsg.append(nameStrong);
+      squadFillMsg.append(
+        document.createTextNode(
+          ` (${roster.length} jugador${roster.length !== 1 ? "es" : ""} confirmado${roster.length !== 1 ? "s" : ""}). Elegí el torneo y tocá el botón para cargar nombre y nicks.`
+        )
+      );
+      squadFillBtn.classList.remove("hidden");
+
+      const tSel = tournaments.find((x) => x.id === selectTorneo.value);
+      updateSquadFillHint(tSel || null);
+    } catch (e) {
+      console.warn("initSquadPrefill:", e);
+      squadFillBar.classList.add("hidden");
+    }
+  }
+
   /** Si no viene isFree del servidor, se asume gratis (torneos viejos). */
   function isTournamentFree(t) {
     return t.isFree !== false;
@@ -192,6 +325,7 @@
     }
     updateTorneoMeta();
     renderPlayerInputs(null);
+    initSquadPrefill();
   }
 
   function updateTorneoMeta() {
@@ -240,7 +374,38 @@
     const t = tournaments.find((x) => x.id === selectTorneo.value);
     renderPlayerInputs(t ? t.mode : null);
     updateTorneoMeta();
+    updateSquadFillHint(t || null);
   });
+
+  if (squadFillBtn) {
+    squadFillBtn.addEventListener("click", () => {
+      if (!cachedSquad) return;
+      const tid = selectTorneo.value;
+      const t = tournaments.find((x) => x.id === tid);
+      if (!t) {
+        alert("Elegí un torneo primero.");
+        return;
+      }
+      const required = PLAYERS_BY_MODE[t.mode] ?? 5;
+      if (cachedSquad.roster.length < required) {
+        alert(
+          "Tu equipo en Mi cuenta tiene " +
+            cachedSquad.roster.length +
+            " jugador(es) confirmado(s) y este torneo pide " +
+            required +
+            ". Sumá o confirmá jugadores en Mi cuenta o cargá los datos a mano."
+        );
+        return;
+      }
+      const nm = (cachedSquad.name || "").trim();
+      if (nm.length >= 2) teamName.value = nm.slice(0, 60);
+      const inputs = playersList.querySelectorAll('input[name="player"]');
+      const take = cachedSquad.roster.slice(0, required);
+      for (let i = 0; i < take.length; i++) {
+        if (inputs[i]) inputs[i].value = take[i];
+      }
+    });
+  }
 
   function getApiBase() {
     if (typeof window === "undefined" || window.location.protocol === "file:") return null;

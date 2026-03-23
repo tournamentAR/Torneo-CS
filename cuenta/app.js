@@ -153,10 +153,15 @@ async function cuentaBoot() {
       .eq("user_id", user.id);
 
     if (memErr) {
-      const hint =
-        memErr.message?.includes("squad_members") || memErr.message?.includes("schema cache")
-          ? "Falta aplicar la migración SQL de equipos en Supabase (archivo 002_squads_leader_player.sql)."
-          : memErr.message || "No se pudieron cargar los equipos.";
+      const raw = memErr.message || String(memErr);
+      const suggest002 =
+        /\b42P01\b/.test(raw) ||
+        /does not exist/i.test(raw) ||
+        /undefined_table/i.test(raw);
+      const hint = suggest002
+        ? "Falta crear las tablas de equipos en Supabase (002_squads_leader_player.sql). " + raw
+        : raw +
+          " — Si ya aplicaste el 002, ejecutá en el SQL Editor también 003_fix_squad_rls_recursion.sql (corrige políticas RLS).";
       showMsg("msgLeader", mode === "leader" ? hint : "");
       showMsg("msgPlayer", mode === "player" ? hint : "");
       return;
