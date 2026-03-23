@@ -21,6 +21,31 @@ function showMsg(elId, text) {
   }
 }
 
+function escapeHtml(s) {
+  return String(s ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function rpcErrorMessage(err) {
+  if (!err) return "Error desconocido";
+  const m = err.message || String(err);
+  if (m.includes("No tenés")) return m;
+  if (m.includes("Ya ")) return m;
+  if (m.includes("No hay ninguna")) return m;
+  if (m.includes("No encontramos")) return m;
+  if (m.includes("No sos")) return m;
+  if (m.includes("invitación")) return m;
+  if (m.includes("equipo")) return m;
+  if (m.includes("líder")) return m;
+  if (m.includes("jugador")) return m;
+  if (m.includes("Código")) return m;
+  if (m.includes("iniciar sesión")) return m;
+  return m.length > 120 ? "No se pudo completar la acción." : m;
+}
+
 async function main() {
   const loadingEl = $("loading");
   const configError = $("configError");
@@ -38,6 +63,7 @@ async function main() {
   }
 
   const redirectUrl = `${window.location.origin}/cuenta/`;
+  const recoverRedirectUrl = `${window.location.origin}/cuenta/recuperar/`;
 
   const supabase = createClient(cfg.supabaseUrl, cfg.supabaseAnonKey, {
     auth: {
@@ -51,6 +77,153 @@ async function main() {
   const authSection = $("authSection");
   const loggedSection = $("loggedSection");
 
+  async function fetchUsernameMap(userIds) {
+    const ids = [...new Set(userIds)].filter(Boolean);
+    if (ids.length === 0) return new Map();
+    const { data, error } = await supabase.from("profiles").select("id, username").in("id", ids);
+    if (error || !data) return new Map();
+    return new Map(data.map((p) => [p.id, p.username ?? "—"]));
+  }
+
+  async function renderSquadPanels(user, prof) {
+    const mode = prof?.account_mode === "leader" ? "leader" : "player";
+    const btnL = $("btnModeLeader");
+    const btnP = $("btnModePlayer");
+    const panelLeader = $("panelLeader");
+    const panelPlayer = $("panelPlayer");
+    if (btnL) btnL.classList.toggle("is-active", mode === "leader");
+    if (btnP) btnP.classList.toggle("is-active", mode === "player");
+    if (panelLeader) panelLeader.classList.toggle("hidden", mode !== "leader");
+    if (panelPlayer) panelPlayer.classList.toggle("hidden", mode !== "player");
+
+    showMsg("msgLeader", "");
+    showMsg("msgPlayer", "");
+
+    const leaderNote = $("playerLeaderNote");
+    if (leaderNote) {
+      leaderNote.classList.add("hidden");
+      leaderNote.textContent = "";
+    }
+
+    const { data: rows, error: memErr } = await supabase
+      .from("squad_members")
+      .select("squad_id, status, is_leader, squads(id, name, invite_code, leader_id)")
+      .eq("user_id", user.id);
+
+    if (memErr) {
+      const hint =
+        memErr.message?.includes("squad_members") || memErr.message?.includes("schema cache")
+          ? "Falta aplicar la migración SQL de equipos en Supabase (archivo 002_squads_leader_player.sql)."
+          : memErr.message || "No se pudieron cargar los equipos.";
+      showMsg("msgLeader", mode === "leader" ? hint : "");
+      showMsg("msgPlayer", mode === "player" ? hint : "");
+      return;
+    }
+
+    const list = rows ?? [];
+    const ledRow = list.find((r) => r.is_leader && r.status === "confirmed" && r.squads);
+    const ledSquad = ledRow?.squads ?? null;
+
+    if (leaderNote && ledSquad && mode === "player") {
+      leaderNote.textContent = `Sos líder del equipo «${ledSquad.name}». Para unirte a otro como jugador, eliminá tu equipo en modo líder o usá otra cuenta.`;
+      leaderNote.classList.remove("hidden");
+    }
+
+    const leaderCreate = $("leaderCreateWrap");
+    const leaderManage = $("leaderManageWrap");
+    if (mode === "leader") {
+      if (ledSquad) {
+        leaderCreate?.classList.add("hidden");
+        leaderManage?.classList.remove("hidden");
+        setText("leaderSquadName", ledSquad.name ?? "—");
+        setText("leaderInviteCode", ledSquad.invite_code ?? "—");
+        leaderManage?.dataset.squadId = ledSquad.id;
+
+        const { data: squadMembers } = await supabase
+          .from("squad_members")
+          .select("user_id, is_leader, status")
+          .eq("squad_id", ledSquad.id);
+
+        const sm = squadMembers ?? [];
+        const nameById = await fetchUsernameMap(sm.map((m) => m.user_id));
+        const ul = $("leaderMemberList");
+        if (ul) {
+          ul.innerHTML = sm
+            .map((m) => {
+              const uname = escapeHtml(nameById.get(m.user_id) ?? m.user_id.slice(0, 8));
+              let badge = "Jugador";
+              let badgeClass = "memberList__badge--wait";
+              if (m.is_leader) {
+                badge = "Líder";
+                badgeClass = "memberList__badge--ok";
+              } else if (m.status === "confirmed") {
+                badge = "Confirmó";
+                badgeClass = "memberList__badge--ok";
+              } else if (m.status === "pending") {
+                badge = "Pendiente";
+              } else if (m.status === "declined") {
+                badge = "Rechazó";
+                badgeClass = "";
+              }
+              return `<li><span class="memberList__name">${uname}</span><span class="memberList__badge ${badgeClass}">${badge}</span></li>`;
+            })
+            .join("");
+        }
+      } else {
+        leaderCreate?.classList.remove("hidden");
+        leaderManage?.classList.add("hidden");
+      }
+    }
+
+    const pendingPlayer = list.filter((r) => !r.is_leader && r.status === "pending" && r.squads);
+    const pendingWrap = $("playerPendingWrap");
+    const pendingListEl = $("playerPendingList");
+    if (mode === "player" && pendingPlayer.length > 0) {
+      pendingWrap?.classList.remove("hidden");
+      if (pendingListEl) {
+        pendingListEl.innerHTML = pendingPlayer
+          .map((r) => {
+            const name = escapeHtml(r.squads?.name ?? "Equipo");
+            const sid = r.squad_id;
+            return `<div class="pendingCard" data-squad-id="${escapeHtml(sid)}">
+              <p class="pendingCard__title">${name}</p>
+              <p class="field__hint" style="margin:0 0 8px">Confirmá tu lugar en este equipo o rechazá la invitación.</p>
+              <div class="pendingCard__actions">
+                <button type="button" class="btn btn--primary btn--small js-confirm-squad" data-squad-id="${escapeHtml(sid)}">Confirmar mi lugar</button>
+                <button type="button" class="btn btn--secondary btn--small js-decline-squad" data-squad-id="${escapeHtml(sid)}">Rechazar</button>
+              </div>
+            </div>`;
+          })
+          .join("");
+      }
+    } else {
+      pendingWrap?.classList.add("hidden");
+      if (pendingListEl) pendingListEl.innerHTML = "";
+    }
+
+    const confirmedPlayer = list.find((r) => !r.is_leader && r.status === "confirmed" && r.squads);
+    const squadWrap = $("playerSquadWrap");
+    if (mode === "player" && confirmedPlayer?.squads) {
+      squadWrap?.classList.remove("hidden");
+      setText("playerSquadName", confirmedPlayer.squads.name ?? "—");
+      const sid = confirmedPlayer.squad_id;
+      const { data: mates } = await supabase.from("squad_members").select("user_id, is_leader, status").eq("squad_id", sid);
+      const nm = await fetchUsernameMap((mates ?? []).map((m) => m.user_id));
+      const ul = $("playerTeammateList");
+      if (ul) {
+        ul.innerHTML = (mates ?? [])
+          .filter((m) => m.status === "confirmed")
+          .map((m) => {
+            const label = m.is_leader ? " (líder)" : "";
+            return `<li><span class="memberList__name">${escapeHtml(nm.get(m.user_id) ?? "—")}${label}</span></li>`;
+          })
+          .join("");
+      }
+    } else {
+      squadWrap?.classList.add("hidden");
+    }
+  }
+
   async function refreshUI() {
     const {
       data: { user },
@@ -61,7 +234,7 @@ async function main() {
       return;
     }
 
-    const { data: prof } = await supabase.from("profiles").select("username").eq("id", user.id).maybeSingle();
+    const { data: prof } = await supabase.from("profiles").select("username, account_mode").eq("id", user.id).maybeSingle();
 
     setText("loggedEmail", user.email ?? "—");
     setText("loggedUsername", prof?.username ?? "…");
@@ -69,6 +242,8 @@ async function main() {
     if (nu) nu.value = prof?.username ?? "";
     authSection.classList.add("hidden");
     loggedSection.classList.remove("hidden");
+
+    await renderSquadPanels(user, prof);
   }
 
   supabase.auth.onAuthStateChange(() => {
@@ -94,6 +269,19 @@ async function main() {
     panelLogin.classList.remove("hidden");
     panelRegister.classList.add("hidden");
     showMsg("msgLogin", "");
+    const rp = $("recoverPanel");
+    const ro = $("recoverOk");
+    const ra = $("recoverActions");
+    if (rp) rp.classList.add("hidden");
+    if (ro) ro.classList.add("hidden");
+    if (ra) ra.classList.remove("hidden");
+    const fr = $("formRecover");
+    if (fr) fr.reset();
+    const mr = $("msgRecover");
+    if (mr) {
+      mr.textContent = "";
+      mr.classList.add("hidden");
+    }
   });
 
   tabRegister.addEventListener("click", () => {
@@ -110,6 +298,56 @@ async function main() {
     const fr = $("formRegister");
     if (fr) fr.reset();
     showMsg("msgRegister", "");
+    const rp = $("recoverPanel");
+    if (rp) rp.classList.add("hidden");
+  });
+
+  const btnToggleRecover = $("btnToggleRecover");
+  const recoverPanel = $("recoverPanel");
+  if (btnToggleRecover && recoverPanel) {
+    btnToggleRecover.addEventListener("click", () => {
+      recoverPanel.classList.toggle("hidden");
+      if (!recoverPanel.classList.contains("hidden")) {
+        $("recoverOk")?.classList.add("hidden");
+        $("recoverActions")?.classList.remove("hidden");
+        $("formRecover")?.reset();
+        const mr = $("msgRecover");
+        if (mr) {
+          mr.textContent = "";
+          mr.classList.add("hidden");
+        }
+        recoverPanel.querySelector("#recoverEmail")?.focus();
+      }
+    });
+  }
+
+  $("formRecover")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const msgEl = $("msgRecover");
+    const okEl = $("recoverOk");
+    const actions = $("recoverActions");
+    if (msgEl) {
+      msgEl.textContent = "";
+      msgEl.classList.add("hidden");
+    }
+    if (okEl) okEl.classList.add("hidden");
+    const email = $("recoverEmail")?.value.trim() ?? "";
+    if (!email) return;
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: recoverRedirectUrl,
+    });
+
+    if (error) {
+      if (msgEl) {
+        msgEl.textContent = error.message || "No se pudo enviar el enlace.";
+        msgEl.classList.remove("hidden");
+      }
+      return;
+    }
+
+    if (okEl) okEl.classList.remove("hidden");
+    if (actions) actions.classList.add("hidden");
   });
 
   $("formLogin").addEventListener("submit", async (e) => {
@@ -219,6 +457,116 @@ async function main() {
 
     if (hint) hint.textContent = "Nombre actualizado.";
     setText("loggedUsername", raw);
+  });
+
+  async function setAccountMode(mode) {
+    showMsg("msgLeader", "");
+    showMsg("msgPlayer", "");
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+    const { error } = await supabase.from("profiles").update({ account_mode: mode }).eq("id", user.id);
+    if (error) {
+      showMsg("msgLeader", mode === "leader" ? error.message : "");
+      showMsg("msgPlayer", mode === "player" ? error.message : "");
+      return;
+    }
+    const { data: prof } = await supabase.from("profiles").select("username, account_mode").eq("id", user.id).maybeSingle();
+    await renderSquadPanels(user, prof);
+  }
+
+  $("btnModeLeader")?.addEventListener("click", () => setAccountMode("leader"));
+  $("btnModePlayer")?.addEventListener("click", () => setAccountMode("player"));
+
+  $("formCreateSquad")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    showMsg("msgLeader", "");
+    const name = ($("squadNameInput")?.value ?? "").trim();
+    const { error } = await supabase.rpc("create_squad", { p_name: name });
+    if (error) {
+      showMsg("msgLeader", rpcErrorMessage(error));
+      return;
+    }
+    $("formCreateSquad")?.reset();
+    await refreshUI();
+  });
+
+  $("formInvitePlayer")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    showMsg("msgLeader", "");
+    const squadId = $("leaderManageWrap")?.dataset.squadId;
+    if (!squadId) return;
+    const raw = ($("inviteUsernameInput")?.value ?? "").trim().toLowerCase();
+    if (!USERNAME_RE.test(raw)) {
+      showMsg("msgLeader", "Usuario invitado: 3–24 caracteres (minúsculas, números y _).");
+      return;
+    }
+    const { error } = await supabase.rpc("invite_squad_member", {
+      p_squad_id: squadId,
+      p_username: raw,
+    });
+    if (error) {
+      showMsg("msgLeader", rpcErrorMessage(error));
+      return;
+    }
+    $("inviteUsernameInput").value = "";
+    await refreshUI();
+  });
+
+  $("btnCopyInviteCode")?.addEventListener("click", async () => {
+    const code = ($("leaderInviteCode")?.textContent ?? "").trim();
+    if (!code || code === "—") return;
+    try {
+      await navigator.clipboard.writeText(code);
+    } catch {
+      showMsg("msgLeader", "No se pudo copiar. Copiá el código a mano.");
+      return;
+    }
+    showMsg("msgLeader", "Código copiado.");
+    setTimeout(() => showMsg("msgLeader", ""), 2000);
+  });
+
+  $("btnDeleteSquad")?.addEventListener("click", async () => {
+    if (!confirm("¿Eliminar este equipo? Se borran invitaciones y la lista de jugadores.")) return;
+    showMsg("msgLeader", "");
+    const { error } = await supabase.rpc("delete_my_squad");
+    if (error) {
+      showMsg("msgLeader", rpcErrorMessage(error));
+      return;
+    }
+    await refreshUI();
+  });
+
+  $("formJoinCode")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    showMsg("msgPlayer", "");
+    const code = ($("joinCodeInput")?.value ?? "").trim();
+    const { error } = await supabase.rpc("join_squad_by_code", { p_code: code });
+    if (error) {
+      showMsg("msgPlayer", rpcErrorMessage(error));
+      return;
+    }
+    $("joinCodeInput").value = "";
+    await refreshUI();
+  });
+
+  $("playerPendingList")?.addEventListener("click", async (ev) => {
+    const t = /** @type {HTMLElement} */ (ev.target);
+    const btn = t.closest?.(".js-confirm-squad, .js-decline-squad");
+    if (!btn) return;
+    const squadId = btn.getAttribute("data-squad-id");
+    if (!squadId) return;
+    showMsg("msgPlayer", "");
+    const isConfirm = btn.classList.contains("js-confirm-squad");
+    const { error } = isConfirm
+      ? await supabase.rpc("confirm_squad_membership", { p_squad_id: squadId })
+      : await supabase.rpc("decline_squad_invite", { p_squad_id: squadId });
+    if (error) {
+      showMsg("msgPlayer", rpcErrorMessage(error));
+      return;
+    }
+    await refreshUI();
   });
 }
 

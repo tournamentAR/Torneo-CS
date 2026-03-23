@@ -503,6 +503,21 @@ app.get("/cuenta/styles.css", (req, res) => {
   if (!ok) res.status(404).send("Cannot GET /cuenta/styles.css");
 });
 
+const ROOT_CUENTA_RECUPERAR_DIR = path.join(__dirname, "cuenta", "recuperar");
+
+function sendCuentaRecuperarIndex(res) {
+  const ok = sendIfExists(path.join(ROOT_CUENTA_RECUPERAR_DIR, "index.html"), res);
+  if (!ok) res.status(404).send("Cannot GET /cuenta/recuperar/");
+}
+
+app.get("/cuenta/recuperar", (req, res) => sendCuentaRecuperarIndex(res));
+app.get("/cuenta/recuperar/", (req, res) => sendCuentaRecuperarIndex(res));
+app.get("/cuenta/recuperar/index.html", (req, res) => sendCuentaRecuperarIndex(res));
+app.get("/cuenta/recuperar/app.js", (req, res) => {
+  const ok = sendIfExists(path.join(ROOT_CUENTA_RECUPERAR_DIR, "app.js"), res);
+  if (!ok) res.status(404).send("Cannot GET /cuenta/recuperar/app.js");
+});
+
 // Menú principal: imagen en /assets/ (Vercel + Windows; ruta explícita)
 app.get("/assets/fondo-menu.png", (req, res) => {
   const candidates = [

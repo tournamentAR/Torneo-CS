@@ -28,6 +28,81 @@
           <p class="profileLine"><span class="profileLine__k">Nombre de usuario</span> <span id="loggedUsername" class="profileLine__v"></span></p>
           <p class="profileLine"><span class="profileLine__k">Email</span> <span id="loggedEmail" class="profileLine__v"></span></p>
 
+          <div class="roleBlock">
+            <p class="roleBlock__label">Modo en tu perfil</p>
+            <div class="roleTabs" role="tablist" aria-label="Líder o jugador">
+              <button type="button" id="btnModeLeader" class="roleTabs__btn" role="tab">Soy líder</button>
+              <button type="button" id="btnModePlayer" class="roleTabs__btn" role="tab">Soy jugador</button>
+            </div>
+            <p id="roleModeHint" class="field__hint">Elegí qué herramientas ver. Podés cambiar cuando quieras.</p>
+          </div>
+
+          <div id="panelLeader" class="rolePanel hidden">
+            <h3 class="sectionTitle">Equipo como líder</h3>
+            <p id="msgLeader" class="msg msg--error hidden" role="alert"></p>
+            <div id="leaderCreateWrap" class="hidden">
+              <p class="field__hint">Creá tu equipo y compartí el código con tus jugadores o invitalos por nombre de usuario.</p>
+              <form id="formCreateSquad" class="profileEdit profileEdit--tight">
+                <label class="field">
+                  <span class="field__label">Nombre del equipo</span>
+                  <input id="squadNameInput" class="input" type="text" minlength="2" maxlength="80" required placeholder="Ej: Los Flick" />
+                </label>
+                <div class="form__actions">
+                  <button class="btn btn--primary" type="submit">Crear equipo</button>
+                </div>
+              </form>
+            </div>
+            <div id="leaderManageWrap" class="hidden">
+              <p class="profileLine"><span class="profileLine__k">Equipo</span> <span id="leaderSquadName" class="profileLine__v"></span></p>
+              <p class="profileLine">
+                <span class="profileLine__k">Código</span>
+                <span id="leaderInviteCode" class="profileLine__v profileLine__v--code"></span>
+                <button type="button" id="btnCopyInviteCode" class="btn btn--small btn--secondary">Copiar</button>
+              </p>
+              <p class="field__hint">Compartí el código para que entren como jugadores, o invitá por usuario registrado.</p>
+              <h4 class="sectionTitle sectionTitle--sub">Jugadores</h4>
+              <ul id="leaderMemberList" class="memberList" aria-live="polite"></ul>
+              <form id="formInvitePlayer" class="profileEdit profileEdit--tight">
+                <label class="field">
+                  <span class="field__label">Invitar por nombre de usuario</span>
+                  <input id="inviteUsernameInput" class="input" type="text" autocomplete="off" minlength="3" maxlength="24" placeholder="mismo formato que al registrarte" />
+                </label>
+                <div class="form__actions">
+                  <button class="btn btn--secondary" type="submit">Enviar invitación</button>
+                </div>
+              </form>
+              <div class="form__actions" style="margin-top: 16px">
+                <button type="button" id="btnDeleteSquad" class="btn btn--danger">Eliminar equipo</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="panelPlayer" class="rolePanel hidden">
+            <h3 class="sectionTitle">Como jugador</h3>
+            <p id="msgPlayer" class="msg msg--error hidden" role="alert"></p>
+            <p id="playerLeaderNote" class="field__hint hidden"></p>
+            <div id="playerPendingWrap" class="hidden">
+              <h4 class="sectionTitle sectionTitle--sub">Invitaciones pendientes</h4>
+              <p class="field__hint">Confirmá tu lugar o rechazá si no querés formar parte.</p>
+              <div id="playerPendingList" class="pendingList"></div>
+            </div>
+            <form id="formJoinCode" class="profileEdit profileEdit--tight">
+              <label class="field">
+                <span class="field__label">Unirme con código del líder</span>
+                <input id="joinCodeInput" class="input" type="text" autocomplete="off" minlength="4" maxlength="16" placeholder="Código de 8 caracteres" />
+              </label>
+              <div class="form__actions">
+                <button class="btn btn--primary" type="submit">Pedir unirme</button>
+              </div>
+            </form>
+            <div id="playerJoinNote" class="field__hint">Al pedir unirte quedás pendiente hasta que confirmes abajo (o desde invitación del líder).</div>
+            <div id="playerSquadWrap" class="hidden" style="margin-top: 18px">
+              <h4 class="sectionTitle sectionTitle--sub">Tu equipo confirmado</h4>
+              <p class="profileLine"><span class="profileLine__k">Nombre</span> <span id="playerSquadName" class="profileLine__v"></span></p>
+              <ul id="playerTeammateList" class="memberList"></ul>
+            </div>
+          </div>
+
           <form id="formUsername" class="profileEdit">
             <label class="field">
               <span class="field__label">Cambiar nombre de usuario</span>
@@ -65,6 +140,25 @@
                 <button class="btn btn--primary" type="submit">Entrar</button>
               </div>
             </form>
+            <p class="recoverLine">
+              <button type="button" class="recoverLink" id="btnToggleRecover">¿Olvidaste tu contraseña?</button>
+            </p>
+            <div id="recoverPanel" class="recoverPanel hidden">
+              <p class="field__hint">Te enviaremos un enlace a tu email para elegir una contraseña nueva.</p>
+              <form id="formRecover">
+                <label class="field">
+                  <span class="field__label">Email de tu cuenta</span>
+                  <input id="recoverEmail" class="input" type="email" autocomplete="email" required />
+                </label>
+                <p id="msgRecover" class="msg msg--error hidden" role="alert"></p>
+                <div id="recoverOk" class="registerSuccess hidden" role="status">
+                  <p>Si ese email tiene una cuenta, recibirás un correo con el enlace. Revisá también spam.</p>
+                </div>
+                <div class="form__actions" id="recoverActions">
+                  <button class="btn btn--secondary" type="submit">Enviar enlace</button>
+                </div>
+              </form>
+            </div>
           </div>
 
           <div id="panelRegister" class="panel hidden" role="tabpanel">

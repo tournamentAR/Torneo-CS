@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nueva contraseña — Torneos CS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body>
+    <header class="header">
+      <div class="container header__inner">
+        <h1 class="title">Recuperar contraseña</h1>
+        <p class="subtitle">Elegí una contraseña nueva para tu cuenta.</p>
+        <a href="../" class="back">← Mi cuenta</a>
+      </div>
+    </header>
+
+    <main class="container main">
+      <div id="loading" class="card">Cargando…</div>
+      <div id="configError" class="card card--error hidden" role="alert"></div>
+
+      <div id="noSession" class="card card--error hidden" role="alert">
+        <p class="card__title" style="margin-top: 0">Enlace inválido o vencido</p>
+        <p>No pudimos validar la sesión de recuperación. Pedí un <strong>nuevo enlace</strong> desde <a href="../">Mi cuenta → ¿Olvidaste tu contraseña?</a></p>
+      </div>
+
+      <div id="appMain" class="hidden">
+        <div id="formWrap" class="card">
+          <h2 class="card__title">Nueva contraseña</h2>
+          <form id="formNewPassword">
+            <label class="field">
+              <span class="field__label">Contraseña nueva</span>
+              <input id="newPass" class="input" type="password" autocomplete="new-password" minlength="8" required />
+            </label>
+            <label class="field">
+              <span class="field__label">Repetir contraseña</span>
+              <input id="newPass2" class="input" type="password" autocomplete="new-password" minlength="8" required />
+            </label>
+            <p id="msgReset" class="msg msg--error hidden" role="alert"></p>
+            <div class="form__actions">
+              <button class="btn btn--primary" type="submit">Guardar contraseña</button>
+            </div>
+          </form>
+        </div>
+
+        <div id="successPanel" class="card card--success hidden" role="status">
+          <h2 class="card__title" style="margin-top: 0">Listo</h2>
+          <p>Ya podés iniciar sesión con tu contraseña nueva.</p>
+          <p><a class="btn btn--primary" href="../" style="display: inline-block; text-decoration: none; margin-top: 8px">Volver a Mi cuenta</a></p>
+        </div>
+      </div>
+    </main>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
