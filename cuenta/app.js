@@ -179,7 +179,7 @@ async function cuentaBoot() {
         leaderManage?.classList.remove("hidden");
         setText("leaderSquadName", ledSquad.name ?? "—");
         setText("leaderInviteCode", ledSquad.invite_code ?? "—");
-        leaderManage?.dataset.squadId = ledSquad.id;
+        if (leaderManage) leaderManage.dataset.squadId = ledSquad.id;
 
         const { data: squadMembers } = await supabase
           .from("squad_members")
