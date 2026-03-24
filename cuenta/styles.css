@@ -275,6 +275,19 @@ body {
   font-weight: 600;
 }
 
+.profileXplayHint {
+  margin: 4px 0 14px;
+  line-height: 1.45;
+}
+.profileXplayHint a {
+  color: var(--neon-orange);
+  font-weight: 600;
+  text-decoration: underline;
+}
+.profileXplayHint a:hover {
+  text-shadow: 0 0 8px rgba(255, 149, 0, 0.35);
+}
+
 .profileEdit {
   margin-top: 20px;
   padding-top: 16px;
