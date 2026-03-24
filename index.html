@@ -216,11 +216,17 @@
       .card--players .card__label { color: var(--tactical-green); }
       .card--players .card__icon { color: var(--tactical-green); }
 
-      /* Mi cuenta — fondo propio (no comparte imagen con Inscribir equipo) */
+      /* Mi cuenta — fondo propio (velo más liviano: la imagen es oscura y el mismo overlay que Inscribir la tapaba) */
       .card--cuenta.card--players {
+        background-color: transparent;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
         background-image:
-          linear-gradient(135deg, rgba(9, 18, 22, 0.82), rgba(4, 10, 14, 0.74)),
+          linear-gradient(135deg, rgba(9, 18, 22, 0.38), rgba(4, 10, 14, 0.32)),
           url("./assets/fondo-de-tarjeta-mi-cuenta.webp");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
       }
 
       .card__label {
