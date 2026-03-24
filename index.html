@@ -216,6 +216,13 @@
       .card--players .card__label { color: var(--tactical-green); }
       .card--players .card__icon { color: var(--tactical-green); }
 
+      /* Mi cuenta — fondo propio (no comparte imagen con Inscribir equipo) */
+      .card--cuenta.card--players {
+        background-image:
+          linear-gradient(135deg, rgba(9, 18, 22, 0.82), rgba(4, 10, 14, 0.74)),
+          url("./assets/fondo-de-tarjeta-mi-cuenta.webp");
+      }
+
       .card__label {
         font-family: var(--font-display);
         font-size: 11px;
@@ -597,7 +604,7 @@
             <p class="card__desc">Anotate con tu equipo y jugadores; el organizador confirma para el torneo.</p>
           </div>
         </a>
-        <a href="./cuenta/" class="card card--players">
+        <a href="./cuenta/" class="card card--players card--cuenta">
           <span class="card__spotlight" aria-hidden="true"></span>
           <div class="card__content">
             <span class="card__label">Jugadores</span>
